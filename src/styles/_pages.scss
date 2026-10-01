@@ -451,3 +451,23 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .settings ion-list ion-item { --background: transparent; --border-color: var(--sn-border); }
 .settings ion-list ion-icon[slot='start'] { color: var(--ion-color-primary); }
 .about { margin: 30px 0 0; color: var(--ion-color-medium); font-size: .8rem; text-align: center; }
+
+// Library month groups with sticky headers.
+.month-group + .month-group { margin-top: 30px; }
+.month-header {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -18px 14px;
+  padding: 10px 18px;
+  background: rgba(var(--ion-background-color-rgb), .86);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+.month-header h2 { margin: 0; font-size: 1.12rem; }
+.month-header span { color: var(--ion-color-medium); font-size: .8rem; font-weight: 650; text-align: right; }
+@media (min-width: 640px) { .month-header { margin-inline: -28px; padding-inline: 28px; } }

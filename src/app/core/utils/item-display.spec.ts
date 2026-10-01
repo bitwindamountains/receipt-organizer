@@ -1,5 +1,5 @@
 import { SavedItem } from '../models/saved-item';
-import { displayTitle, formatAmount, matchesQuery, monthlyReceiptSummary } from './item-display';
+import { displayTitle, formatAmount, groupByMonth, matchesQuery, monthlyReceiptSummary } from './item-display';
 
 const item: SavedItem = {
   id: 'one',
@@ -55,5 +55,22 @@ describe('item display utilities', () => {
     expect(summary?.total).toContain('50,000');
     expect(summary?.otherCurrencies).toBe(1);
     expect(monthlyReceiptSummary([], now)).toBeNull();
+  });
+
+  it('groups sorted items into months with receipt totals', () => {
+    const now = new Date(2026, 9, 15);
+    const at = (y: number, m: number, d: number) => new Date(y, m, d, 12).toISOString();
+    const groups = groupByMonth([
+      { ...item, id: 'a', createdAt: at(2026, 9, 3), amountMinor: 1000 },
+      { ...item, id: 'b', createdAt: at(2026, 9, 1), amountMinor: 2500 },
+      { ...item, id: 'c', type: 'screenshot', createdAt: at(2026, 8, 20) },
+      { ...item, id: 'd', createdAt: at(2025, 11, 31) },
+    ], now);
+    expect(groups.map((group) => group.items.map((entry) => entry.id))).toEqual([['a', 'b'], ['c'], ['d']]);
+    expect(groups[0].receipts?.count).toBe(2);
+    expect(groups[0].receipts?.total).toContain('35');
+    expect(groups[1].receipts).toBeNull();
+    expect(groups[2].label).toContain('2025');
+    expect(groups[0].label).not.toContain('2026');
   });
 });
