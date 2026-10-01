@@ -12,9 +12,11 @@ export interface SelectedImage {
 
 @Injectable({ providedIn: 'root' })
 export class ImageStorageService {
-  async selectImages(): Promise<SelectedImage[]> {
-    const result = await Camera.pickImages({ limit: 10, quality: 95 });
-    return result.photos.map((photo) => {
+  async selectImages(limit = 10): Promise<SelectedImage[]> {
+    const result = await Camera.pickImages({ limit, quality: 95 });
+    // The web picker ignores `limit`, so enforce it here.
+    for (const extra of result.photos.slice(limit)) this.release(extra.webPath);
+    return result.photos.slice(0, limit).map((photo) => {
       const extension = (photo.format || 'jpeg').toLowerCase().replace('jpg', 'jpeg');
       return {
         sourceUrl: photo.webPath,
