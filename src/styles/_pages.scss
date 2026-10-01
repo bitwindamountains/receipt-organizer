@@ -731,3 +731,45 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
   .bar-fill { animation: sn-grow-x 800ms var(--sn-ease-out) both; animation-delay: calc(var(--i, 0) * 70ms + 200ms); }
   .chart-tip { animation: sn-fade-in 150ms ease both; }
 }
+
+// ---------- Warranty ----------
+@keyframes sn-ring-fill { from { stroke-dashoffset: 113.1; } }
+
+.warranty-card { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 14px 16px; border: 1px solid rgba(var(--ion-color-primary-rgb), .22); border-radius: var(--sn-radius-lg); background: var(--sn-primary-soft); }
+.warranty-card.is-ending { border-color: rgba(var(--ion-color-secondary-rgb), .35); background: var(--sn-accent-soft); }
+.warranty-card.is-ended { border-color: var(--sn-border); background: var(--sn-surface-soft); }
+.warranty-ring { position: relative; display: grid; flex: 0 0 auto; place-items: center; width: 52px; height: 52px; }
+.warranty-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.warranty-ring circle { fill: none; stroke-width: 4; }
+.ring-track { stroke: rgba(var(--ion-color-primary-rgb), .16); }
+// Circumference of r=18 is 113.1.
+.ring-fill { stroke: var(--ion-color-primary); stroke-linecap: round; stroke-dasharray: 113.1; stroke-dashoffset: calc(113.1 * (1 - var(--p, 1))); }
+.warranty-ring ion-icon { color: var(--ion-color-primary); font-size: 20px; }
+.is-ending .ring-track { stroke: rgba(var(--ion-color-secondary-rgb), .2); }
+.is-ending .ring-fill { stroke: var(--ion-color-secondary-shade); }
+.is-ending .warranty-ring ion-icon, .is-ending .warranty-copy strong { color: var(--sn-accent-ink); }
+.is-ended .ring-track { stroke: var(--sn-border); }
+.is-ended .warranty-ring ion-icon { color: var(--ion-color-medium); }
+.warranty-copy { display: grid; gap: 2px; }
+.warranty-copy strong { color: var(--sn-primary-ink); }
+.warranty-copy span { color: var(--ion-color-medium); font-size: .84rem; }
+
+.ending-soon { margin-top: 30px; }
+.ending-soon h2 { margin: 3px 0 12px; }
+.ending-list { display: grid; gap: 10px; }
+.ending-card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--sn-border); border-radius: 18px; background: var(--sn-surface); box-shadow: var(--sn-shadow-1); color: inherit; text-decoration: none; transition: transform var(--sn-dur-fast) var(--sn-ease-out), box-shadow var(--sn-dur); }
+.ending-days { display: grid; flex: 0 0 auto; place-items: center; align-content: center; width: 54px; height: 54px; border-radius: 16px; background: var(--sn-primary-soft); color: var(--sn-primary-ink); line-height: 1; }
+.ending-days strong { font-size: 1.2rem; font-weight: 800; }
+.ending-days small { font-size: .66rem; font-weight: 700; }
+.ending-days.is-urgent { background: var(--sn-accent-soft); color: var(--sn-accent-ink); }
+.ending-copy { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.ending-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ending-copy small { color: var(--ion-color-medium); font-size: .8rem; }
+.ending-card > ion-icon { color: var(--ion-color-medium); }
+@media (hover: hover) { .ending-card:hover { box-shadow: var(--sn-shadow-2); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ring-fill { animation: sn-ring-fill 1.1s var(--sn-ease-out) 300ms both; }
+  .ending-card:active { transform: scale(.98); }
+  .ending-days.is-urgent { animation: sn-wiggle 700ms var(--sn-ease-out) 1.2s; }
+}

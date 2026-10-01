@@ -27,6 +27,7 @@ import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService, SelectedImage } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
 import { PreferencesStore } from '../../core/services/preferences.store';
+import { ReminderService } from '../../core/services/reminder.service';
 import { ReceiptSuggestion, parseReceiptText } from '../../core/ocr/receipt-parser';
 import { TextRecognitionService } from '../../core/ocr/text-recognition.service';
 import { injectGoBack } from '../../core/utils/navigation';
@@ -186,6 +187,7 @@ export class AddItemPage implements OnInit {
   protected readonly categories = inject(CategoryStore);
   private readonly recognition = inject(TextRecognitionService);
   private readonly preferences = inject(PreferencesStore);
+  private readonly reminders = inject(ReminderService);
 
   protected readonly currencies = ['USD', 'PHP', 'EUR', 'GBP', 'CNY', 'JPY', 'AUD', 'CAD'];
   protected readonly maxImages = MAX_IMAGES;
@@ -472,8 +474,10 @@ export class AddItemPage implements OnInit {
   }
 
   private async finish(message: string, fallback: string): Promise<void> {
-    const currency = this.details().currencyCode;
-    if (currency) this.preferences.rememberCurrency(currency);
+    const { currencyCode, warrantyUntil } = this.details();
+    if (currencyCode) this.preferences.rememberCurrency(currencyCode);
+    // Ask for notification permission only once a reminder is actually wanted.
+    if (warrantyUntil) void this.reminders.requestPermission();
     const toast = await this.toastController.create({ message, duration: 1800, position: 'bottom', icon: 'checkmark-circle' });
     await toast.present();
     this.goBackOr(fallback);

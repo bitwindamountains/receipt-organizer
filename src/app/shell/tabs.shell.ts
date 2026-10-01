@@ -12,6 +12,7 @@ import {
 import { addIcons } from 'ionicons';
 import { add, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline } from 'ionicons/icons';
 import { ItemStore } from '../core/services/item.store';
+import { ReminderService } from '../core/services/reminder.service';
 
 @Component({
   selector: 'app-tabs-shell',
@@ -55,6 +56,8 @@ export class TabsShell {
   protected readonly isEmpty = computed(() => this.store.ready() && this.store.items().length === 0);
 
   constructor() {
+    // Starts keeping warranty reminders in sync with the library.
+    inject(ReminderService);
     addIcons({ add, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline });
   }
 }

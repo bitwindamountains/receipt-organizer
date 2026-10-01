@@ -1,17 +1,19 @@
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonIcon, IonSearchbar } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { albumsOutline, arrowForward, layers, receiptOutline, starOutline } from 'ionicons/icons';
+import { albumsOutline, arrowForward, chevronForward, layers, receiptOutline, starOutline } from 'ionicons/icons';
 import { ItemStore } from '../../core/services/item.store';
-import { monthlyReceiptSummary } from '../../core/utils/item-display';
+import { displayTitle, monthlyReceiptSummary } from '../../core/utils/item-display';
+import { daysLeftLabel, endingSoon } from '../../core/utils/warranty';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
 import { CountUpDirective } from '../../shared/count-up.directive';
 import { ItemCardComponent } from '../../shared/item-card/item-card.component';
 
 @Component({
   selector: 'app-home',
-  imports: [IonContent, IonSearchbar, IonButton, IonIcon, RouterLink, ItemCardComponent, AmbientBackdropComponent, CountUpDirective],
+  imports: [DatePipe, IonContent, IonSearchbar, IonButton, IonIcon, RouterLink, ItemCardComponent, AmbientBackdropComponent, CountUpDirective],
   template: `
     <ion-content [fullscreen]="true">
       <app-ambient-backdrop class="home-ambient" />
@@ -85,6 +87,24 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
             </a>
           }
 
+          @if (ending().length) {
+            <section class="ending-soon reveal" style="--i: 7" aria-labelledby="ending-title">
+              <p class="eyebrow">Heads up</p>
+              <h2 id="ending-title">Warranties ending soon</h2>
+              <div class="ending-list">
+                @for (entry of ending(); track entry.item.id) {
+                  <a class="ending-card" [routerLink]="['/item', entry.item.id]">
+                    <span class="ending-days" [class.is-urgent]="entry.daysLeft <= 7" aria-hidden="true">
+                      @if (entry.daysLeft === 0) { <strong>Today</strong> } @else { <strong>{{ entry.daysLeft }}</strong><small>{{ entry.daysLeft === 1 ? 'day' : 'days' }}</small> }
+                    </span>
+                    <span class="ending-copy"><strong>{{ title(entry.item) }}</strong><small>{{ daysLeftLabel(entry.daysLeft) }} · {{ entry.item.warrantyUntil | date: 'MMM d' }}</small></span>
+                    <ion-icon name="chevron-forward" aria-hidden="true" />
+                  </a>
+                }
+              </div>
+            </section>
+          }
+
           <section class="quick-categories reveal" style="--i: 7">
             <p class="eyebrow">Browse by category</p>
             <div class="chip-row">
@@ -116,6 +136,9 @@ export class HomePage implements OnInit {
   protected readonly query = signal('');
   protected readonly receiptCount = computed(() => this.store.items().filter((item) => item.type === 'receipt').length);
   protected readonly monthSummary = computed(() => monthlyReceiptSummary(this.store.items()));
+  protected readonly ending = computed(() => endingSoon(this.store.items()).slice(0, 4));
+  protected readonly title = displayTitle;
+  protected readonly daysLeftLabel = daysLeftLabel;
   protected readonly popularCategories = computed(() => {
     const counts = new Map<string, number>();
     for (const item of this.store.items()) counts.set(item.category, (counts.get(item.category) ?? 0) + 1);
@@ -123,7 +146,7 @@ export class HomePage implements OnInit {
   });
 
   constructor() {
-    addIcons({ albumsOutline, arrowForward, layers, receiptOutline, starOutline });
+    addIcons({ albumsOutline, arrowForward, chevronForward, layers, receiptOutline, starOutline });
   }
 
   ngOnInit(): void {
