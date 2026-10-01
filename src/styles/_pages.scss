@@ -329,6 +329,62 @@ $zigzag: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90d
 }
 
 .media { display: grid; gap: 12px; }
+.preview-wrap { position: relative; }
+.autofill-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 15px 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--ion-color-primary-tint), var(--ion-color-primary-shade));
+  color: var(--ion-color-primary-contrast);
+  box-shadow: var(--sn-shadow-primary);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.autofill-button ion-icon { font-size: 17px; }
+.autofill-button ion-spinner { width: 16px; height: 16px; color: inherit; }
+.autofill-button:disabled { opacity: .85; cursor: progress; }
+.autofill-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid rgba(var(--ion-color-primary-rgb), .25);
+  border-radius: var(--sn-radius-md);
+  background: var(--sn-primary-soft);
+}
+.autofill-icon { display: grid; flex: 0 0 auto; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); font-size: 17px; }
+.autofill-copy { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.autofill-copy strong { color: var(--sn-primary-ink); font-size: .9rem; }
+.autofill-copy span { overflow: hidden; color: var(--ion-color-medium); font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
+.autofill-banner button { min-height: 40px; padding: 0 12px; border: 0; border-radius: 12px; background: transparent; color: var(--ion-color-primary); font: inherit; font-weight: 750; cursor: pointer; }
+// A just-filled field glows briefly.
+@keyframes sn-filled { 0% { background-color: rgba(var(--ion-color-primary-rgb), .22); } 100% { background-color: transparent; } }
+@keyframes sn-scan-loop {
+  0% { opacity: 0; transform: translate3d(0, -70px, 0); }
+  10%, 85% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(0, 100%, 0); }
+}
+.preview-wrap.is-reading .preview img { filter: saturate(.7) brightness(.92); transition: filter 300ms ease; }
+@media (prefers-reduced-motion: no-preference) {
+  .form-card ion-item.auto-filled, .type-toggle.auto-filled .type-track { animation: sn-filled 2.4s var(--sn-ease-out); }
+  .preview-scan.preview-scan--loop { animation: sn-scan-loop 1.6s var(--sn-ease-in-out) infinite; }
+  .autofill-button ion-icon { animation: sn-wiggle 1.2s var(--sn-ease-out) 600ms; }
+}
+@media (prefers-reduced-motion: reduce) {
+  // Without motion, show the filled state as a static tint instead.
+  .form-card ion-item.auto-filled { background: rgba(var(--ion-color-primary-rgb), .12); }
+  .preview-scan.preview-scan--loop { opacity: 1; }
+}
 .preview-count { position: absolute; left: 12px; top: 12px; padding: 6px 11px; border-radius: 999px; background: rgba(10, 16, 14, .6); color: #fff; font-size: .8rem; font-weight: 750; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 .filmstrip { display: flex; gap: 10px; margin-inline: -18px; padding: 6px 18px 4px; overflow-x: auto; scrollbar-width: none; }
 .filmstrip::-webkit-scrollbar { display: none; }

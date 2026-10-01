@@ -11,18 +11,20 @@ import {
   IonList,
   IonNote,
   IonTitle,
+  IonToggle,
   IonToolbar,
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, close, cloudOfflineOutline, folderOpenOutline, imagesOutline, lockClosed, trashOutline } from 'ionicons/icons';
+import { add, close, cloudOfflineOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline } from 'ionicons/icons';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
+import { PreferencesStore } from '../../core/services/preferences.store';
 
 @Component({
   selector: 'app-settings',
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonNote, IonIcon, IonInput, IonButton],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonNote, IonIcon, IonInput, IonButton, IonToggle],
   template: `
     <ion-header class="ion-no-border"><ion-toolbar><ion-title>Settings</ion-title></ion-toolbar></ion-header>
     <ion-content [fullscreen]="true">
@@ -49,8 +51,18 @@ import { ItemStore } from '../../core/services/item.store';
           </div>
         } @else { <p class="helper">Default categories are ready to use. Add your own when you need one.</p> }
 
-        <p class="group-title">Your data</p>
+        <p class="group-title">Smart features</p>
         <ion-list inset="true" class="reveal" style="--i: 2">
+          <ion-item lines="none">
+            <ion-icon slot="start" name="sparkles-outline" aria-hidden="true" />
+            <ion-toggle [checked]="preferences.autoRead()" (ionChange)="preferences.setAutoRead($any($event).detail.checked)">
+              <ion-label><h3>Read receipts automatically</h3><p>Fill in the merchant, total, date, and category when you add an image. Runs on this device.</p></ion-label>
+            </ion-toggle>
+          </ion-item>
+        </ion-list>
+
+        <p class="group-title">Your data</p>
+        <ion-list inset="true" class="reveal" style="--i: 3">
           <ion-item lines="full">
             <ion-icon slot="start" name="images-outline" aria-hidden="true" />
             <ion-label><h3>Storage</h3><p>{{ store.items().length }} saved {{ store.items().length === 1 ? 'item' : 'items' }}</p></ion-label>
@@ -81,6 +93,7 @@ import { ItemStore } from '../../core/services/item.store';
 export class SettingsPage {
   protected readonly categories = inject(CategoryStore);
   protected readonly store = inject(ItemStore);
+  protected readonly preferences = inject(PreferencesStore);
   private readonly images = inject(ImageStorageService);
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
@@ -88,7 +101,7 @@ export class SettingsPage {
   protected readonly categoryError = signal('');
 
   constructor() {
-    addIcons({ add, close, cloudOfflineOutline, folderOpenOutline, imagesOutline, lockClosed, trashOutline });
+    addIcons({ add, close, cloudOfflineOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline });
     void this.store.load();
   }
 

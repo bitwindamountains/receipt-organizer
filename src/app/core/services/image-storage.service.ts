@@ -9,6 +9,10 @@ export interface SelectedImage {
   sourceUrl: string;
   mimeType: string;
   extension: string;
+  /** Native file URI (Android), used for on-device text recognition. */
+  fileUri?: string;
+  /** Original file name when known, e.g. "Screenshot_20261001.png". */
+  fileName?: string;
 }
 
 /** `thumb` is a small copy for grids; it falls back to the full image until one exists. */
@@ -29,6 +33,8 @@ export class ImageStorageService {
         sourceUrl: photo.webPath,
         mimeType: `image/${extension}`,
         extension: extension === 'jpeg' ? 'jpg' : extension,
+        fileUri: photo.path ? (photo.path.startsWith('/') ? `file://${photo.path}` : photo.path) : undefined,
+        fileName: photo.path?.split('/').pop(),
       };
     });
   }
@@ -50,6 +56,12 @@ export class ImageStorageService {
       this.backfillThumbnail(key);
     }
     return this.storedUrl(key, false);
+  }
+
+  /** Native file URI of a stored image, for on-device text recognition. */
+  async fileUriFor(key: string): Promise<string | undefined> {
+    if (!Capacitor.isNativePlatform()) return undefined;
+    return (await Filesystem.getUri({ path: key, directory: Directory.Data })).uri;
   }
 
   /** Frees a URL returned by `urlFor` or `selectImages` once it is no longer displayed. */

@@ -21,14 +21,18 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, checkmarkCircle, close, cloudUploadOutline, phonePortraitOutline, receiptOutline, swapHorizontalOutline } from 'ionicons/icons';
+import { add, checkmarkCircle, close, cloudUploadOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline } from 'ionicons/icons';
 import { ItemType, NewSavedItem, SavedItem } from '../../core/models/saved-item';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService, SelectedImage } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
+import { PreferencesStore } from '../../core/services/preferences.store';
+import { ReceiptSuggestion, parseReceiptText } from '../../core/ocr/receipt-parser';
+import { TextRecognitionService } from '../../core/ocr/text-recognition.service';
 import { injectGoBack } from '../../core/utils/navigation';
 
 const LAST_CURRENCY_KEY = 'snapsort.currency.last';
+type AutoFillField = 'type' | 'category' | 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate';
 const MAX_IMAGES = 10;
 
 @Component({
@@ -45,12 +49,30 @@ const MAX_IMAGES = 10;
       <main class="page-width content-pad add-layout">
         <section class="media">
           @if (activeImage(); as image) {
-            <button class="preview" type="button" (click)="replaceActive()" [attr.aria-label]="isBatch() ? 'Replace image ' + (activeIndex() + 1) : 'Change selected image'">
-              <img [src]="image.sourceUrl" [alt]="isBatch() ? 'Selected image ' + (activeIndex() + 1) + ' of ' + selection().length : 'Selected image preview'" />
-              @for (key of [scanKey()]; track key) { @if (key) { <span class="preview-scan" aria-hidden="true"></span> } }
-              @if (isBatch()) { <span class="preview-count num" aria-hidden="true">{{ activeIndex() + 1 }} / {{ selection().length }}</span> }
-              <span class="preview-change"><ion-icon name="swap-horizontal-outline" aria-hidden="true" />{{ isBatch() ? 'Replace' : 'Change image' }}</span>
-            </button>
+            <div class="preview-wrap" [class.is-reading]="reading()">
+              <button class="preview" type="button" (click)="replaceActive()" [attr.aria-label]="isBatch() ? 'Replace image ' + (activeIndex() + 1) : 'Change selected image'">
+                <img [src]="image.sourceUrl" [alt]="isBatch() ? 'Selected image ' + (activeIndex() + 1) + ' of ' + selection().length : 'Selected image preview'" />
+                @for (key of [scanKey()]; track key) { @if (key && !reading()) { <span class="preview-scan" aria-hidden="true"></span> } }
+                @if (reading()) { <span class="preview-scan preview-scan--loop" aria-hidden="true"></span> }
+                @if (isBatch()) { <span class="preview-count num" aria-hidden="true">{{ activeIndex() + 1 }} / {{ selection().length }}</span> }
+                <span class="preview-change"><ion-icon name="swap-horizontal-outline" aria-hidden="true" />{{ isBatch() ? 'Replace' : 'Change image' }}</span>
+              </button>
+              @if (canRead(image)) {
+                <button type="button" class="autofill-button" (click)="runAutoFill()" [disabled]="reading() || saving()">
+                  @if (reading()) { <ion-spinner name="crescent" /> Reading... } @else { <ion-icon name="sparkles" aria-hidden="true" /> Auto-fill }
+                </button>
+              }
+            </div>
+            @if (autoFill(); as fill) {
+              <div class="autofill-banner" role="status" animate.enter="enter-fade" animate.leave="leave-fade">
+                <span class="autofill-icon" aria-hidden="true"><ion-icon name="sparkles" /></span>
+                <div class="autofill-copy">
+                  <strong>{{ fill.message }}</strong>
+                  @if (fill.summary) { <span>{{ fill.summary }}</span> }
+                </div>
+                @if (fill.undo) { <button type="button" (click)="undoAutoFill()">Undo</button> }
+              </div>
+            }
             @if (!existing()) {
               <div class="filmstrip" role="list" aria-label="Selected images">
                 @for (picked of selection(); track picked.sourceUrl; let i = $index) {
@@ -81,7 +103,7 @@ const MAX_IMAGES = 10;
         </section>
 
         <form [formGroup]="form" (ngSubmit)="save()" novalidate>
-          <fieldset class="type-toggle" [class.is-receipt]="isReceipt()">
+          <fieldset class="type-toggle" [class.is-receipt]="isReceipt()" [class.auto-filled]="filled().has('type')">
             <legend>What kind of image is this?</legend>
             <div class="type-track">
               <span class="type-thumb" aria-hidden="true"></span>
@@ -99,16 +121,16 @@ const MAX_IMAGES = 10;
           @if (isReceipt()) {
             <div class="form-card receipt-fields" animate.enter="enter-expand" animate.leave="leave-fade">
               <p class="form-card-label">Receipt details</p>
-              <ion-item><ion-input formControlName="merchant" label="Merchant (optional)" labelPlacement="stacked" placeholder="Where was this from?" [maxlength]="120" /></ion-item>
+              <ion-item [class.auto-filled]="filled().has('merchant')"><ion-input formControlName="merchant" label="Merchant (optional)" labelPlacement="stacked" placeholder="Where was this from?" [maxlength]="120" /></ion-item>
               <div class="amount-row">
-                <ion-item><ion-select formControlName="currencyCode" label="Currency" labelPlacement="stacked" interface="popover">
+                <ion-item [class.auto-filled]="filled().has('currencyCode')"><ion-select formControlName="currencyCode" label="Currency" labelPlacement="stacked" interface="popover">
                   @for (currency of currencies; track currency) { <ion-select-option [value]="currency">{{ currency }}</ion-select-option> }
                 </ion-select></ion-item>
-                <ion-item>
+                <ion-item [class.auto-filled]="filled().has('amount')">
                   <ion-input formControlName="amount" label="Amount (optional)" labelPlacement="stacked" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0.00" errorText="Enter an amount of zero or more." />
                 </ion-item>
               </div>
-              <ion-item><ion-input formControlName="purchaseDate" label="Purchase date (optional)" labelPlacement="stacked" type="date" /></ion-item>
+              <ion-item [class.auto-filled]="filled().has('purchaseDate')"><ion-input formControlName="purchaseDate" label="Purchase date (optional)" labelPlacement="stacked" type="date" /></ion-item>
               <ion-item lines="none">
                 <ion-input formControlName="warrantyUntil" label="Warranty or return until (optional)" labelPlacement="stacked" type="date" />
                 <ion-note slot="helper">We'll remind you a week before it ends</ion-note>
@@ -117,7 +139,7 @@ const MAX_IMAGES = 10;
           }
 
           <div class="form-card">
-            <ion-item>
+            <ion-item [class.auto-filled]="filled().has('category')">
               <ion-select formControlName="category" label="Category" labelPlacement="stacked" interface="popover">
                 @for (category of categories.all(); track category) { <ion-select-option [value]="category">{{ category }}</ion-select-option> }
               </ion-select>
@@ -155,6 +177,8 @@ export class AddItemPage implements OnInit {
   private readonly toastController = inject(ToastController);
   private readonly goBackOr = injectGoBack();
   protected readonly categories = inject(CategoryStore);
+  private readonly recognition = inject(TextRecognitionService);
+  private readonly preferences = inject(PreferencesStore);
 
   protected readonly currencies = ['USD', 'PHP', 'EUR', 'GBP', 'CNY', 'JPY', 'AUD', 'CAD'];
   protected readonly maxImages = MAX_IMAGES;
@@ -165,6 +189,12 @@ export class AddItemPage implements OnInit {
   protected readonly isBatch = computed(() => this.selection().length > 1);
   protected readonly progress = signal<{ done: number; total: number } | null>(null);
   protected readonly saving = signal(false);
+  protected readonly reading = signal(false);
+  protected readonly autoFill = signal<{ message: string; summary: string; undo?: Partial<FormValue> } | null>(null);
+  /** Controls filled by the last auto-fill, for a brief highlight. */
+  protected readonly filled = signal<ReadonlySet<AutoFillField>>(new Set());
+  private filledTimer?: ReturnType<typeof setTimeout>;
+  private readRequest = 0;
   protected readonly error = signal('');
   protected readonly existing = signal<SavedItem | null>(null);
   /** Changes on each newly picked image so the scan sweep replays. */
@@ -188,7 +218,7 @@ export class AddItemPage implements OnInit {
   protected readonly isReceipt = computed(() => this.selectedType() === 'receipt');
 
   constructor() {
-    addIcons({ add, checkmarkCircle, close, cloudUploadOutline, phonePortraitOutline, receiptOutline, swapHorizontalOutline });
+    addIcons({ add, checkmarkCircle, close, cloudUploadOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline });
     inject(DestroyRef).onDestroy(() => this.selection().forEach((image) => this.images.release(image.sourceUrl)));
   }
 
@@ -214,6 +244,7 @@ export class AddItemPage implements OnInit {
       warrantyUntil: item.warrantyUntil ?? '',
     });
     this.selection.set([{
+      fileUri: await this.images.fileUriFor(item.imageKey),
       sourceUrl: await this.images.urlFor(item.imageKey),
       mimeType: item.mimeType,
       extension: item.mimeType.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg',
@@ -229,9 +260,82 @@ export class AddItemPage implements OnInit {
       this.replaceAt(0, picked[0]);
       return;
     }
+    const wasEmpty = !this.selection().length;
     this.selection.update((images) => [...images, ...picked]);
     this.activeIndex.set(this.selection().length - picked.length);
     this.scanKey.update((key) => key + 1);
+    if (wasEmpty && this.preferences.autoRead()) void this.runAutoFill();
+  }
+
+  protected canRead(image: SelectedImage): boolean {
+    return this.recognition.canRead(image);
+  }
+
+  /** Reads the image on screen and fills in fields the user hasn't edited. */
+  async runAutoFill(): Promise<void> {
+    const image = this.activeImage();
+    if (!image || this.reading()) return;
+    const request = ++this.readRequest;
+    this.reading.set(true);
+    this.autoFill.set(null);
+    try {
+      const text = await this.recognition.read(image);
+      if (request !== this.readRequest) return;
+      const suggestion = parseReceiptText(text, { fileName: image.fileName, history: this.store.items(), categories: this.categories.all() });
+      this.applySuggestion(suggestion);
+    } catch {
+      if (request === this.readRequest) this.autoFill.set({ message: "Couldn't read this image", summary: 'You can still fill in the details yourself.' });
+    } finally {
+      if (request === this.readRequest) this.reading.set(false);
+    }
+  }
+
+  undoAutoFill(): void {
+    const undo = this.autoFill()?.undo;
+    if (undo) this.form.patchValue(undo);
+    this.autoFill.set(null);
+    this.filled.set(new Set());
+  }
+
+  private applySuggestion(suggestion: ReceiptSuggestion): void {
+    const controls = this.form.controls;
+    const before = this.form.getRawValue();
+    const changes: Partial<FormValue> = {};
+    // Never overwrite something the user typed or chose.
+    const offer = <K extends AutoFillField>(field: K, value: FormValue[K] | null) => {
+      if (value === null || value === '' || controls[field].dirty || before[field] === value) return;
+      changes[field] = value;
+    };
+    offer('type', suggestion.type);
+    offer('category', suggestion.category);
+    if (suggestion.type === 'receipt') {
+      offer('merchant', suggestion.merchant);
+      offer('amount', suggestion.amount);
+      offer('currencyCode', suggestion.currencyCode);
+      offer('purchaseDate', suggestion.purchaseDate);
+    }
+    const fields = Object.keys(changes) as AutoFillField[];
+    if (!fields.length) {
+      this.autoFill.set({ message: 'Nothing new to fill in', summary: suggestion.type === 'receipt' ? 'The details already match this receipt.' : 'This looks like a screenshot without receipt details.' });
+      return;
+    }
+    this.form.patchValue(changes);
+    const undo = Object.fromEntries(fields.map((field) => [field, before[field]])) as Partial<FormValue>;
+    const value = this.form.getRawValue();
+    const amount = changes.amount !== undefined && value.amount !== null
+      ? new Intl.NumberFormat(undefined, { style: 'currency', currency: value.currencyCode }).format(value.amount)
+      : null;
+    const summary = [
+      changes.type ? (changes.type === 'receipt' ? 'Receipt' : 'Screenshot') : null,
+      changes.merchant ?? null,
+      amount,
+      changes.purchaseDate ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(changes.purchaseDate)) : null,
+      changes.category ?? null,
+    ].filter(Boolean).join(' · ');
+    this.autoFill.set({ message: 'Filled in from your image', summary, undo });
+    this.filled.set(new Set(fields));
+    clearTimeout(this.filledTimer);
+    this.filledTimer = setTimeout(() => this.filled.set(new Set()), 2400);
   }
 
   /** Swaps the image shown in the preview for a new one. */
@@ -383,4 +487,17 @@ function rememberCurrency(code: string): void {
   } catch {
     // Not critical; the default currency is used next time.
   }
+}
+
+interface FormValue {
+  type: ItemType;
+  category: string;
+  title: string;
+  tags: string;
+  notes: string;
+  merchant: string;
+  amount: number | null;
+  currencyCode: string;
+  purchaseDate: string;
+  warrantyUntil: string;
 }
