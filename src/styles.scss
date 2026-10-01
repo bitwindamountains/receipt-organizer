@@ -1,0 +1,10 @@
+// Ionic's CSS, the Inter font, and the dark palette are loaded before this file
+// via angular.json. Shared UI lives in these partials rather than in component
+// stylesheets, which keeps every component under the style budget.
+@use 'styles/tokens';
+@use 'styles/base';
+@use 'styles/motion';
+@use 'styles/ambient';
+@use 'styles/shell';
+@use 'styles/components';
+@use 'styles/pages';

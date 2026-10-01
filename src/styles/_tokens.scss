@@ -1,0 +1,122 @@
+// Design tokens. Light is the default; dark follows the OS setting.
+// Ionic's dark palette (loaded before this file) supplies the neutral step colours;
+// the brand values below override it. `:root body` beats Ionic's `.md body` rule.
+
+:root {
+  color-scheme: light dark;
+
+  --ion-font-family: 'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sn-font-mono: ui-monospace, 'SF Mono', 'Roboto Mono', 'Cascadia Mono', Menlo, monospace;
+
+  --ion-color-primary: #26574b;
+  --ion-color-primary-rgb: 38, 87, 75;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #214d42;
+  --ion-color-primary-tint: #3c685d;
+  --ion-color-secondary: #d9783d;
+  --ion-color-secondary-rgb: 217, 120, 61;
+  --ion-color-secondary-contrast: #23150d;
+  --ion-color-secondary-contrast-rgb: 35, 21, 13;
+  --ion-color-secondary-shade: #bf6a36;
+  --ion-color-secondary-tint: #dd8650;
+  --ion-background-color: #f7f6f1;
+  --ion-background-color-rgb: 247, 246, 241;
+  --ion-text-color: #15201d;
+  --ion-text-color-rgb: 21, 32, 29;
+  --ion-color-medium: #63716d;
+  --ion-color-medium-rgb: 99, 113, 109;
+  --ion-toolbar-background: var(--ion-background-color);
+  --ion-item-background: transparent;
+
+  --sn-surface: #ffffff;
+  --sn-surface-soft: #eeede6;
+  --sn-surface-glass: rgba(255, 255, 255, .74);
+  --sn-primary-soft: #e2eee9;
+  --sn-primary-ink: #1d4a3f;
+  --sn-accent-soft: #fbeadf;
+  --sn-accent-ink: #8a4316;
+  --sn-gold: #ffd76a;
+  --sn-gold-ink: #5e3e00;
+  --sn-gold-soft: #fff1c7;
+  --sn-gold-text: #7a5300;
+  --sn-shimmer: rgba(255, 255, 255, .6);
+  --sn-border: #e1e1d9;
+  --sn-border-strong: #b5c0bc;
+  --sn-paper: #fffdf6;
+  --sn-paper-line: rgba(21, 32, 29, .1);
+  --sn-paper-ink: rgba(21, 32, 29, .3);
+  --sn-glow-a: rgba(38, 87, 75, .2);
+  --sn-glow-b: rgba(217, 120, 61, .17);
+  --sn-stage: #111916;
+
+  --sn-shadow-1: 0 1px 2px rgba(21, 32, 29, .05), 0 2px 8px rgba(21, 32, 29, .04);
+  --sn-shadow-2: 0 2px 6px rgba(21, 32, 29, .05), 0 14px 34px rgba(21, 32, 29, .08);
+  --sn-shadow-3: 0 8px 22px rgba(21, 32, 29, .08), 0 28px 64px rgba(21, 32, 29, .14);
+  --sn-shadow-primary: 0 10px 26px rgba(38, 87, 75, .32);
+
+  --sn-radius-sm: 12px;
+  --sn-radius-md: 16px;
+  --sn-radius-lg: 22px;
+  --sn-radius-xl: 28px;
+
+  --sn-ease-out: cubic-bezier(.22, 1, .36, 1);
+  --sn-ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --sn-ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --sn-dur-fast: 160ms;
+  --sn-dur: 280ms;
+  --sn-dur-slow: 560ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root,
+  :root body {
+    --ion-color-primary: #78c9b0;
+    --ion-color-primary-rgb: 120, 201, 176;
+    --ion-color-primary-contrast: #06201a;
+    --ion-color-primary-contrast-rgb: 6, 32, 26;
+    --ion-color-primary-shade: #6ab19b;
+    --ion-color-primary-tint: #86ceb8;
+    --ion-color-secondary: #ef9a62;
+    --ion-color-secondary-rgb: 239, 154, 98;
+    --ion-color-secondary-contrast: #2a1407;
+    --ion-color-secondary-contrast-rgb: 42, 20, 7;
+    --ion-color-secondary-shade: #d28856;
+    --ion-color-secondary-tint: #f1a472;
+    --ion-background-color: #0c1311;
+    --ion-background-color-rgb: 12, 19, 17;
+    --ion-text-color: #e6eeeb;
+    --ion-text-color-rgb: 230, 238, 235;
+    --ion-color-medium: #97a7a2;
+    --ion-color-medium-rgb: 151, 167, 162;
+    --ion-toolbar-background: var(--ion-background-color);
+    --ion-item-background: transparent;
+    --ion-card-background: #141d1a;
+
+    --sn-surface: #141d1a;
+    --sn-surface-soft: #1b2623;
+    --sn-surface-glass: rgba(22, 32, 29, .72);
+    --sn-primary-soft: rgba(120, 201, 176, .14);
+    --sn-primary-ink: #a6e0ce;
+    --sn-accent-soft: rgba(239, 154, 98, .15);
+    --sn-accent-ink: #f5bb93;
+    --sn-gold: #e9b949;
+    --sn-gold-ink: #2b1d00;
+    --sn-gold-soft: rgba(233, 185, 73, .15);
+    --sn-gold-text: #f0cc78;
+    --sn-shimmer: rgba(255, 255, 255, .05);
+    --sn-border: #24302c;
+    --sn-border-strong: #3b4b46;
+    --sn-paper: #1d2825;
+    --sn-paper-line: rgba(230, 238, 235, .09);
+    --sn-paper-ink: rgba(230, 238, 235, .24);
+    --sn-glow-a: rgba(120, 201, 176, .15);
+    --sn-glow-b: rgba(239, 154, 98, .11);
+    --sn-stage: #050908;
+
+    --sn-shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
+    --sn-shadow-2: 0 2px 6px rgba(0, 0, 0, .3), 0 14px 34px rgba(0, 0, 0, .3);
+    --sn-shadow-3: 0 8px 22px rgba(0, 0, 0, .35), 0 28px 64px rgba(0, 0, 0, .45);
+    --sn-shadow-primary: 0 10px 26px rgba(120, 201, 176, .2);
+  }
+}

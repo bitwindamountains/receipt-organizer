@@ -1,0 +1,49 @@
+html { background: var(--ion-background-color); -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0;
+  font-feature-settings: 'cv11', 'ss03';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+* { box-sizing: border-box; }
+::selection { background: rgba(var(--ion-color-primary-rgb), .22); }
+
+h1, h2, h3 { font-weight: 760; letter-spacing: -.025em; }
+h2 { font-size: 1.32rem; }
+
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 3px;
+}
+
+.num { font-variant-numeric: tabular-nums; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+ion-content { --background: var(--ion-background-color); }
+ion-toolbar { --background: var(--ion-toolbar-background); --border-color: transparent; }
+ion-title { font-weight: 780; letter-spacing: -.02em; }
+ion-button { --border-radius: 14px; text-transform: none; letter-spacing: 0; font-weight: 700; }
+ion-button[fill='solid']:not([color]), ion-button:not([fill]):not([color]) { --box-shadow: var(--sn-shadow-primary); }
+ion-toast { --border-radius: 16px; --box-shadow: var(--sn-shadow-3); --start: 16px; --end: 16px; font-weight: 600; }
+ion-alert .alert-wrapper { border-radius: var(--sn-radius-lg) !important; }
+ion-popover { --border-radius: var(--sn-radius-md); --box-shadow: var(--sn-shadow-3); }
+
+.page-width { width: min(100%, 920px); margin-inline: auto; }
+.content-pad { padding: 18px 18px calc(108px + var(--ion-safe-area-bottom)); }
+.eyebrow {
+  color: var(--ion-color-primary);
+  font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin: 0;
+}
+.item-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; }
+
+@media (min-width: 640px) {
+  .content-pad { padding-inline: 28px; }
+  .item-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px 18px; }
+}
+
+@media (min-width: 880px) {
+  .item-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

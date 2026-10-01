@@ -1,0 +1,59 @@
+// Motion system. Every animation is declared inside `no-preference`, so with
+// reduced motion the elements simply render in their final, static state.
+
+@keyframes sn-fade-up { from { opacity: 0; transform: translate3d(0, 16px, 0); } }
+@keyframes sn-fade-in { from { opacity: 0; } }
+@keyframes sn-fade-out { to { opacity: 0; transform: scale(.97); } }
+@keyframes sn-card-in { from { opacity: 0; transform: translate3d(0, 22px, 0) scale(.96); } }
+@keyframes sn-expand { from { opacity: 0; transform: translate3d(0, -8px, 0) scaleY(.96); } }
+@keyframes sn-pop {
+  0% { opacity: 0; transform: scale(.5); }
+  60% { opacity: 1; transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@keyframes sn-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+@keyframes sn-float { 50% { transform: translate3d(0, -8px, 0); } }
+@keyframes sn-ring {
+  0% { opacity: .55; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.45); }
+}
+@keyframes sn-burst {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(.4); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-26px) scale(1); }
+}
+@keyframes sn-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-14deg) scale(1.15); }
+  60% { transform: rotate(10deg) scale(1.1); }
+}
+@keyframes sn-scan {
+  0% { transform: translate3d(0, -10%, 0); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translate3d(0, 110%, 0); opacity: 0; }
+}
+@keyframes sn-viewer-in { from { opacity: 0; transform: scale(.94); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  // Staggered entrance for static content; set --i on each element.
+  .reveal { animation: sn-fade-up var(--sn-dur-slow) var(--sn-ease-out) both; animation-delay: calc(var(--i, 0) * 70ms + 40ms); }
+
+  // Used with Angular's animate.enter / animate.leave.
+  .enter-card { animation: sn-card-in 520ms var(--sn-ease-out) both; animation-delay: calc(min(var(--i, 0), 12) * 45ms); }
+  .enter-fade { animation: sn-fade-up 360ms var(--sn-ease-out) both; }
+  .enter-expand { animation: sn-expand 360ms var(--sn-ease-out) both; transform-origin: top; }
+  .enter-pop { animation: sn-pop 420ms var(--sn-ease-spring) both; }
+  .leave-fade { animation: sn-fade-out 200ms ease-in both; }
+
+  .pressable { transition: transform var(--sn-dur-fast) var(--sn-ease-out); }
+  .pressable:active { transform: scale(.97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SnapSort</string>
+    <string name="title_activity_main">SnapSort</string>
+    <string name="package_name">app.snapsort.mobile</string>
+    <string name="custom_url_scheme">app.snapsort.mobile</string>
+</resources>
