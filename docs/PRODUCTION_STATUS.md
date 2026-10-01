@@ -1,6 +1,19 @@
 # Production Status
 
-Updated: October 1, 2026 - design and motion pass; performance and import improvements
+Updated: October 1, 2026 - design and motion pass; performance and import improvements; smart features
+
+## Smart features (October 1, 2026)
+
+All run on the device with no servers, accounts, or paid APIs.
+
+- **Auto-sort:** picking one image (or tapping Auto-fill) reads its text and fills in type, merchant, total, currency, date, and category, without overwriting fields the user edited; Undo restores them. Android uses ML Kit (`@capacitor-mlkit/text-recognition`, bundled Latin model, adds a few MB). The browser uses Tesseract.js from `/ocr`, included only by `npm start` and `npm run build:web`. Parsing lives in `core/ocr/receipt-parser.ts` (tested), and categories learn from past merchants. It can be switched off in Settings.
+- **Receipt maker** (`/receipt/new`, linked from Add): "I bought" records a purchase without a receipt; "I sold" issues a branded receipt to a customer, with business details, brand colour, and numbering remembered. Saving renders a PNG and files it; sales are `flow: 'income'` and never count as spending.
+- **Insights tab:** month switcher, hero spend with change vs last month, average and biggest receipt, sales, a six-month column chart (with tooltips and a table view), spending by category, and top places. Chart colours were contrast-checked in both themes.
+- **Warranty reminders:** an optional deadline on receipts; Android notifications a week before and on the day (inexact alarms; `SCHEDULE_EXACT_ALARM` is removed from the manifest); the Home "ending soon" list and a details countdown work everywhere.
+- **Data model:** `flow` and `warrantyUntil` were added (SQLite columns via add-if-missing, schema version 2).
+- **Fix:** purchase dates showed one day early east of UTC (date pipe with a UTC zone on date-only strings).
+
+Device checks still needed: ML Kit accuracy on real thermal receipts, notification permission and delivery on Android 13+, and APK size with the ML Kit model.
 
 ## Performance and import improvements (October 1, 2026)
 
@@ -63,8 +76,9 @@ Fixes in the same pass:
 ## Verification recorded
 
 - `npm run typecheck`: pass
-- `npm test -- --watch=false`: 13 tests pass (October 1, 2026)
-- `npm run build:production`: pass; initial bundle 507 kB (October 1, 2026)
+- `npm test -- --watch=false`: 33 tests pass (October 1, 2026)
+- `npm run build:production`: pass; initial bundle 528 kB (October 1, 2026)
+- `npx cap sync android`: 6 plugins registered, including ML Kit text recognition and local notifications (October 1, 2026)
 - Capacitor Android platform sync: pass; API 36 / minimum API 24
 - `npm audit --omit=dev`: zero production dependency vulnerabilities
 - Browser HTTP smoke check: localhost returned 200; visual automation unavailable in this session
