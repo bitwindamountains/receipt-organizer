@@ -68,7 +68,7 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
               <section class="detail-slip reveal" style="--i: 2" aria-label="Receipt summary">
                 <div class="slip-head">
                   <span>{{ current.merchant || 'Receipt' }}</span>
-                  @if (current.purchaseDate) { <span>{{ current.purchaseDate | date: 'mediumDate':'UTC' }}</span> }
+                  @if (current.purchaseDate) { <span>{{ current.purchaseDate | date: 'mediumDate' }}</span> }
                 </div>
                 @if (formatAmount(current); as amount) {
                   <div class="slip-amount"><span>Total</span><strong class="num">{{ amount }}</strong></div>

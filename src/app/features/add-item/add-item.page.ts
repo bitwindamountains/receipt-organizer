@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   IonBackButton,
   IonButton,
@@ -21,7 +21,7 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, checkmarkCircle, close, cloudUploadOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline } from 'ionicons/icons';
+import { add, checkmarkCircle, chevronForward, close, cloudUploadOutline, createOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline } from 'ionicons/icons';
 import { ItemType, NewSavedItem, SavedItem } from '../../core/models/saved-item';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService, SelectedImage } from '../../core/services/image-storage.service';
@@ -30,14 +30,14 @@ import { PreferencesStore } from '../../core/services/preferences.store';
 import { ReceiptSuggestion, parseReceiptText } from '../../core/ocr/receipt-parser';
 import { TextRecognitionService } from '../../core/ocr/text-recognition.service';
 import { injectGoBack } from '../../core/utils/navigation';
+import { ReplayAnimationDirective } from '../../shared/replay-animation.directive';
 
-const LAST_CURRENCY_KEY = 'snapsort.currency.last';
 type AutoFillField = 'type' | 'category' | 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate';
 const MAX_IMAGES = 10;
 
 @Component({
   selector: 'app-add-item',
-  imports: [ReactiveFormsModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption, IonNote, IonSpinner],
+  imports: [ReactiveFormsModule, RouterLink, ReplayAnimationDirective, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption, IonNote, IonSpinner],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar>
@@ -52,7 +52,7 @@ const MAX_IMAGES = 10;
             <div class="preview-wrap" [class.is-reading]="reading()">
               <button class="preview" type="button" (click)="replaceActive()" [attr.aria-label]="isBatch() ? 'Replace image ' + (activeIndex() + 1) : 'Change selected image'">
                 <img [src]="image.sourceUrl" [alt]="isBatch() ? 'Selected image ' + (activeIndex() + 1) + ' of ' + selection().length : 'Selected image preview'" />
-                @for (key of [scanKey()]; track key) { @if (key && !reading()) { <span class="preview-scan" aria-hidden="true"></span> } }
+                @if (scanKey() && !reading()) { <span class="preview-scan" [appReplay]="scanKey()" replayClass="is-scanning" aria-hidden="true"></span> }
                 @if (reading()) { <span class="preview-scan preview-scan--loop" aria-hidden="true"></span> }
                 @if (isBatch()) { <span class="preview-count num" aria-hidden="true">{{ activeIndex() + 1 }} / {{ selection().length }}</span> }
                 <span class="preview-change"><ion-icon name="swap-horizontal-outline" aria-hidden="true" />{{ isBatch() ? 'Replace' : 'Change image' }}</span>
@@ -99,6 +99,13 @@ const MAX_IMAGES = 10;
               <strong>Choose screenshots or receipts</strong>
               <small>Up to {{ maxImages }} at once · JPG, PNG, or WEBP · stays on this device</small>
             </button>
+            @if (!existing()) {
+              <a class="create-receipt-link" routerLink="/receipt/new" replaceUrl>
+                <ion-icon name="create-outline" aria-hidden="true" />
+                <span><strong>No receipt? Create one</strong>Record a cash purchase or make a receipt for a customer</span>
+                <ion-icon name="chevron-forward" aria-hidden="true" />
+              </a>
+            }
           }
         </section>
 
@@ -208,7 +215,7 @@ export class AddItemPage implements OnInit {
     notes: ['', Validators.maxLength(1000)],
     merchant: ['', Validators.maxLength(120)],
     amount: [null as number | null, Validators.min(0)],
-    currencyCode: [readLastCurrency()],
+    currencyCode: [this.preferences.lastCurrency()],
     purchaseDate: [''],
     warrantyUntil: [''],
   });
@@ -218,7 +225,7 @@ export class AddItemPage implements OnInit {
   protected readonly isReceipt = computed(() => this.selectedType() === 'receipt');
 
   constructor() {
-    addIcons({ add, checkmarkCircle, close, cloudUploadOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline });
+    addIcons({ add, checkmarkCircle, chevronForward, close, cloudUploadOutline, createOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline });
     inject(DestroyRef).onDestroy(() => this.selection().forEach((image) => this.images.release(image.sourceUrl)));
   }
 
@@ -239,7 +246,7 @@ export class AddItemPage implements OnInit {
       notes: item.notes ?? '',
       merchant: item.merchant ?? '',
       amount: item.amountMinor === null ? null : item.amountMinor / 100,
-      currencyCode: item.currencyCode ?? readLastCurrency(),
+      currencyCode: item.currencyCode ?? this.preferences.lastCurrency(),
       purchaseDate: item.purchaseDate ?? '',
       warrantyUntil: item.warrantyUntil ?? '',
     });
@@ -466,26 +473,10 @@ export class AddItemPage implements OnInit {
 
   private async finish(message: string, fallback: string): Promise<void> {
     const currency = this.details().currencyCode;
-    if (currency) rememberCurrency(currency);
+    if (currency) this.preferences.rememberCurrency(currency);
     const toast = await this.toastController.create({ message, duration: 1800, position: 'bottom', icon: 'checkmark-circle' });
     await toast.present();
     this.goBackOr(fallback);
-  }
-}
-
-function readLastCurrency(): string {
-  try {
-    return localStorage.getItem(LAST_CURRENCY_KEY) || 'USD';
-  } catch {
-    return 'USD';
-  }
-}
-
-function rememberCurrency(code: string): void {
-  try {
-    localStorage.setItem(LAST_CURRENCY_KEY, code);
-  } catch {
-    // Not critical; the default currency is used next time.
   }
 }
 

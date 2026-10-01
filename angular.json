@@ -41,6 +41,10 @@
               "node_modules/@ionic/angular/css/flex-utils.css",
               "node_modules/@ionic/angular/css/palettes/dark.system.css",
               "src/styles.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "tesseract.js",
+              "regenerator-runtime"
             ]
           },
           "configurations": {

@@ -40,6 +40,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/add-item/add-item.page').then((m) => m.AddItemPage),
   },
   {
+    path: 'receipt/new',
+    canActivate: [requiresOnboarding],
+    loadComponent: () =>
+      import('./features/receipt-maker/receipt-maker.page').then((m) => m.ReceiptMakerPage),
+  },
+  {
     path: 'item/:id',
     canActivate: [requiresOnboarding],
     loadComponent: () =>

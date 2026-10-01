@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 
 const AUTO_READ_KEY = 'snapsort.autoRead';
+const LAST_CURRENCY_KEY = 'snapsort.currency.last';
 
 /** Small on-device preferences, kept in localStorage. */
 @Injectable({ providedIn: 'root' })
@@ -12,6 +13,15 @@ export class PreferencesStore {
   setAutoRead(enabled: boolean): void {
     this.autoReadState.set(enabled);
     write(AUTO_READ_KEY, String(enabled));
+  }
+
+  /** Currency of the last saved receipt, used as the default for the next one. */
+  lastCurrency(): string {
+    return read(LAST_CURRENCY_KEY) || 'USD';
+  }
+
+  rememberCurrency(code: string): void {
+    write(LAST_CURRENCY_KEY, code);
   }
 }
 
