@@ -111,7 +111,7 @@ function paint(draft: ReceiptDraft, ctx: CanvasRenderingContext2D, height?: numb
     text(line, WIDTH / 2, y, `800 22px ${SANS}`, INK, 'center');
     y += 28;
   }
-  const subtitle = sold ? draft.issuerDetails.trim() : 'Purchase record';
+  const subtitle = draft.issuerDetails.trim() || (sold ? '' : 'Purchase record');
   if (subtitle) {
     for (const line of wrap(subtitle, `500 12px ${SANS}`, WIDTH - PAD * 2)) {
       text(line, WIDTH / 2, y, `500 12px ${SANS}`, MUTED, 'center');

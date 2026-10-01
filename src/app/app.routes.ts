@@ -51,6 +51,11 @@ export const routes: Routes = [
       import('./features/receipt-maker/receipt-maker.page').then((m) => m.ReceiptMakerPage),
   },
   {
+    path: 'inbox',
+    canActivate: [requiresOnboarding],
+    loadComponent: () => import('./features/inbox/inbox.page').then((m) => m.InboxPage),
+  },
+  {
     path: 'item/:id',
     canActivate: [requiresOnboarding],
     loadComponent: () =>

@@ -1,6 +1,18 @@
 # Production Status
 
-Updated: October 1, 2026 - design and motion pass; performance and import improvements; smart features
+Updated: October 2, 2026 - auto-capture
+
+## Auto-capture (October 2, 2026)
+
+- **Payment notifications (Android):** opt-in notification capture turns GCash, Maya, and bank payment notifications into receipts automatically. Each receipt gets a drawn receipt image, is tagged `auto-captured` and with the provider, and is de-duplicated by reference number (or amount and minute). Received money is recorded as income.
+- **Screenshot inbox:** finds new payment screenshots (Android gallery, or a chosen folder in Chromium browsers), reads them, and offers them on `/inbox` with Add, Skip, and Add all. Screenshots that match an existing receipt by amount and date are flagged and left out of Add all.
+- **Share into SnapSort:** an Android share target (`SEND`/`SEND_MULTIPLE` `image/*`) copies shared images into the cache and opens them on the Add page with auto-fill. Browser equivalent: paste or drop on the Add page.
+- **Home:** an "Auto-captured" card and an inbox teaser. Insights renames income to "Money in" (sales plus transfers received).
+- **Native:** `SnapSortCapturePlugin`, `NotificationCaptureService`, and `CaptureStore` (Java). `assembleDebug` succeeds with JDK 21 and SDK 36.
+- **Release blockers for this feature:**
+  - verify the notification wording of real GCash, Maya, and bank apps and tune `transaction-parser.ts` against it;
+  - test on Android 13+ (notification access flow, partial photo access on Android 14);
+  - complete the Play declarations for notification access and `READ_MEDIA_IMAGES`.
 
 ## Smart features (October 1, 2026)
 
@@ -76,12 +88,13 @@ Fixes in the same pass:
 ## Verification recorded
 
 - `npm run typecheck`: pass
-- `npm test -- --watch=false`: 33 tests pass (October 1, 2026)
-- `npm run build:production`: pass; initial bundle 528 kB (October 1, 2026)
+- `npm test -- --watch=false`: 40 tests pass (October 2, 2026)
+- `npm run build:production`: pass; initial bundle 532 kB (October 2, 2026)
+- `./gradlew assembleDebug` (JDK 21, SDK 36): pass (October 2, 2026)
 - `npx cap sync android`: 6 plugins registered, including ML Kit text recognition and local notifications (October 1, 2026)
 - Capacitor Android platform sync: pass; API 36 / minimum API 24
 - `npm audit --omit=dev`: zero production dependency vulnerabilities
 - Browser HTTP smoke check: localhost returned 200; visual automation unavailable in this session
-- Signed Android build: blocked by missing local JDK and Android SDK
+- Signed Android build: not yet attempted; debug builds work with a portable JDK 21
 
 The development-only dependency tree currently reports three moderate findings through Capacitor CLI's `xcode`/`uuid` chain. Do not force-downgrade the CLI; reassess when the upstream Capacitor patch is available.

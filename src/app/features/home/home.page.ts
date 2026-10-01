@@ -3,8 +3,10 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonIcon, IonSearchbar } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { albumsOutline, arrowForward, chevronForward, layers, receiptOutline, starOutline } from 'ionicons/icons';
+import { albumsOutline, arrowForward, chevronForward, flash, layers, receiptOutline, starOutline } from 'ionicons/icons';
 import { ItemStore } from '../../core/services/item.store';
+import { CaptureService } from '../../core/capture/capture.service';
+import { SavedItem } from '../../core/models/saved-item';
 import { displayTitle, monthlyReceiptSummary } from '../../core/utils/item-display';
 import { daysLeftLabel, endingSoon } from '../../core/utils/warranty';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
@@ -87,6 +89,52 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
             </a>
           }
 
+          @if (capture.recent().length) {
+            <section class="capture-card reveal" style="--i: 6" aria-labelledby="captured-title">
+              <header>
+                <span class="capture-icon" aria-hidden="true"><ion-icon name="flash" /></span>
+                <div><h2 id="captured-title">Auto-captured</h2><p>From your payment notifications</p></div>
+                <a class="capture-link" routerLink="/library" [queryParams]="{ q: 'auto-captured' }">See all</a>
+              </header>
+              <ul>
+                @for (item of capture.recent(); track item.id) {
+                  <li animate.enter="enter-expand">
+                    <a [routerLink]="['/item', item.id]">
+                      <span class="capture-provider">{{ (item.tags[1] || 'pay').slice(0, 2) }}</span>
+                      <span class="capture-copy"><strong>{{ item.title }}</strong><small>{{ item.category }} · {{ item.createdAt | date: 'h:mm a' }}</small></span>
+                      <strong class="num" [class.is-income]="item.flow === 'income'">{{ item.flow === 'income' ? '+' : '−' }}{{ money(item) }}</strong>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          @if (capture.inbox().length || capture.folderNeedsPermission()) {
+            <section class="inbox-teaser reveal" style="--i: 6">
+              @if (capture.inbox().length) {
+                <a class="inbox-teaser-link" routerLink="/inbox">
+                  <span class="inbox-stack" aria-hidden="true">
+                    @for (entry of capture.inbox().slice(0, 3); track entry.id) {
+                      <span class="inbox-stack-shot">@if (entry.previewUrl) { <img [src]="entry.previewUrl" alt="" /> }</span>
+                    }
+                  </span>
+                  <span class="inbox-teaser-copy">
+                    <strong>{{ capture.inbox().length }} payment {{ capture.inbox().length === 1 ? 'screenshot' : 'screenshots' }} found</strong>
+                    <small>Tap to review and add them</small>
+                  </span>
+                  <ion-icon name="chevron-forward" aria-hidden="true" />
+                </a>
+              } @else {
+                <button type="button" class="inbox-teaser-link" (click)="capture.reconnectFolder()">
+                  <span class="capture-icon" aria-hidden="true"><ion-icon name="albums-outline" /></span>
+                  <span class="inbox-teaser-copy"><strong>Check for new screenshots</strong><small>Allow access to “{{ capture.folderName() }}” again</small></span>
+                  <ion-icon name="chevron-forward" aria-hidden="true" />
+                </button>
+              }
+            </section>
+          }
+
           @if (ending().length) {
             <section class="ending-soon reveal" style="--i: 7" aria-labelledby="ending-title">
               <p class="eyebrow">Heads up</p>
@@ -132,6 +180,7 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
 })
 export class HomePage implements OnInit {
   protected readonly store = inject(ItemStore);
+  protected readonly capture = inject(CaptureService);
   private readonly router = inject(Router);
   protected readonly query = signal('');
   protected readonly receiptCount = computed(() => this.store.items().filter((item) => item.type === 'receipt').length);
@@ -146,11 +195,15 @@ export class HomePage implements OnInit {
   });
 
   constructor() {
-    addIcons({ albumsOutline, arrowForward, chevronForward, layers, receiptOutline, starOutline });
+    addIcons({ albumsOutline, arrowForward, chevronForward, flash, layers, receiptOutline, starOutline });
   }
 
   ngOnInit(): void {
     void this.store.load();
+  }
+
+  protected money(item: SavedItem): string {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: item.currencyCode ?? 'PHP' }).format((item.amountMinor ?? 0) / 100);
   }
 
   protected greeting(): string {

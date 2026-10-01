@@ -12,7 +12,7 @@ export interface ReceiptDraft {
   mode: ReceiptMode;
   /** Store you bought from, or your business when selling. */
   issuer: string;
-  /** Address or contact line printed under the business name (sold). */
+  /** Line printed under the name: address/contact when selling, or a source note such as "From a GCash notification". */
   issuerDetails: string;
   /** Customer name (sold, optional). */
   customer: string;

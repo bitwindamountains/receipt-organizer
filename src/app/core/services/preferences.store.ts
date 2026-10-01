@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 
 const AUTO_READ_KEY = 'snapsort.autoRead';
 const LAST_CURRENCY_KEY = 'snapsort.currency.last';
+const INBOX_KEY = 'snapsort.inbox.enabled';
 
 /** Small on-device preferences, kept in localStorage. */
 @Injectable({ providedIn: 'root' })
@@ -9,6 +10,15 @@ export class PreferencesStore {
   private readonly autoReadState = signal(read(AUTO_READ_KEY) !== 'false');
   /** Read text from newly picked images and fill in the details. */
   readonly autoRead = this.autoReadState.asReadonly();
+
+  private readonly inboxState = signal(read(INBOX_KEY) === 'true');
+  /** Look for new payment screenshots and offer to add them. */
+  readonly screenshotInbox = this.inboxState.asReadonly();
+
+  setScreenshotInbox(enabled: boolean): void {
+    this.inboxState.set(enabled);
+    write(INBOX_KEY, String(enabled));
+  }
 
   setAutoRead(enabled: boolean): void {
     this.autoReadState.set(enabled);

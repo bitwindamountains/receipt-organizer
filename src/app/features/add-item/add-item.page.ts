@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -26,10 +26,12 @@ import { ItemType, NewSavedItem, SavedItem } from '../../core/models/saved-item'
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService, SelectedImage } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
+import { CaptureService } from '../../core/capture/capture.service';
 import { PreferencesStore } from '../../core/services/preferences.store';
 import { ReminderService } from '../../core/services/reminder.service';
 import { ReceiptSuggestion, parseReceiptText } from '../../core/ocr/receipt-parser';
 import { TextRecognitionService } from '../../core/ocr/text-recognition.service';
+import { parseTransaction } from '../../core/capture/transaction-parser';
 import { injectGoBack } from '../../core/utils/navigation';
 import { ReplayAnimationDirective } from '../../shared/replay-animation.directive';
 
@@ -38,6 +40,7 @@ const MAX_IMAGES = 10;
 
 @Component({
   selector: 'app-add-item',
+  host: { '(document:paste)': 'onPaste($event)' },
   imports: [ReactiveFormsModule, RouterLink, ReplayAnimationDirective, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption, IonNote, IonSpinner],
   template: `
     <ion-header class="ion-no-border">
@@ -48,7 +51,7 @@ const MAX_IMAGES = 10;
     </ion-header>
     <ion-content [fullscreen]="true">
       <main class="page-width content-pad add-layout">
-        <section class="media">
+        <section class="media" [class.is-dragging]="dragging()" (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
           @if (activeImage(); as image) {
             <div class="preview-wrap" [class.is-reading]="reading()">
               <button class="preview" type="button" (click)="replaceActive()" [attr.aria-label]="isBatch() ? 'Replace image ' + (activeIndex() + 1) : 'Change selected image'">
@@ -99,6 +102,7 @@ const MAX_IMAGES = 10;
               </span>
               <strong>Choose screenshots or receipts</strong>
               <small>Up to {{ maxImages }} at once · JPG, PNG, or WEBP · stays on this device</small>
+              @if (!native) { <small class="picker-hint">Or paste a screenshot (Ctrl/⌘+V) or drop images here</small> }
             </button>
             @if (!existing()) {
               <a class="create-receipt-link" routerLink="/receipt/new" replaceUrl>
@@ -188,6 +192,10 @@ export class AddItemPage implements OnInit {
   private readonly recognition = inject(TextRecognitionService);
   private readonly preferences = inject(PreferencesStore);
   private readonly reminders = inject(ReminderService);
+  private readonly capture = inject(CaptureService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  protected readonly native = this.capture.native;
+  protected readonly dragging = signal(false);
 
   protected readonly currencies = ['USD', 'PHP', 'EUR', 'GBP', 'CNY', 'JPY', 'AUD', 'CAD'];
   protected readonly maxImages = MAX_IMAGES;
@@ -229,6 +237,11 @@ export class AddItemPage implements OnInit {
   constructor() {
     addIcons({ add, checkmarkCircle, chevronForward, close, cloudUploadOutline, createOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline });
     inject(DestroyRef).onDestroy(() => this.selection().forEach((image) => this.images.release(image.sourceUrl)));
+    // Images shared into SnapSort from another app land here.
+    effect(() => {
+      if (!this.capture.pendingShares().length || this.route.snapshot.paramMap.get('id')) return;
+      untracked(() => this.addImages(this.capture.takeShares()));
+    });
   }
 
   async ngOnInit(): Promise<void> {
@@ -263,17 +276,49 @@ export class AddItemPage implements OnInit {
   /** Adds images to the selection, up to the limit. When editing, replaces the image. */
   async addMore(): Promise<void> {
     const room = this.existing() ? 1 : this.maxImages - this.selection().length;
-    const picked = await this.pick(room);
+    this.addImages(await this.pick(room));
+  }
+
+  /** Adds picked, shared, pasted, or dropped images, respecting the limit. */
+  private addImages(picked: SelectedImage[]): void {
     if (!picked.length) return;
     if (this.existing()) {
       this.replaceAt(0, picked[0]);
+      picked.slice(1).forEach((image) => this.images.release(image.sourceUrl));
       return;
     }
+    const room = this.maxImages - this.selection().length;
+    picked.slice(room).forEach((image) => this.images.release(image.sourceUrl));
+    picked = picked.slice(0, room);
+    if (!picked.length) return;
     const wasEmpty = !this.selection().length;
     this.selection.update((images) => [...images, ...picked]);
     this.activeIndex.set(this.selection().length - picked.length);
     this.scanKey.update((key) => key + 1);
     if (wasEmpty && this.preferences.autoRead()) void this.runAutoFill();
+  }
+
+  /** Paste a screenshot from the clipboard (desktop browsers). Only while this page is showing. */
+  onPaste(event: ClipboardEvent): void {
+    if (this.host.classList.contains('ion-page-hidden') || this.saving()) return;
+    const files = [...(event.clipboardData?.files ?? [])].filter((file) => file.type.startsWith('image/'));
+    if (!files.length) return;
+    event.preventDefault();
+    this.addImages(files.map(fromFile));
+  }
+
+  onDragOver(event: DragEvent): void {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    this.dragging.set(true);
+  }
+
+  onDrop(event: DragEvent): void {
+    this.dragging.set(false);
+    const files = [...(event.dataTransfer?.files ?? [])].filter((file) => file.type.startsWith('image/'));
+    if (!files.length) return;
+    event.preventDefault();
+    this.addImages(files.map(fromFile));
   }
 
   protected canRead(image: SelectedImage): boolean {
@@ -290,7 +335,10 @@ export class AddItemPage implements OnInit {
     try {
       const text = await this.recognition.read(image);
       if (request !== this.readRequest) return;
-      const suggestion = parseReceiptText(text, { fileName: image.fileName, history: this.store.items(), categories: this.categories.all() });
+      let suggestion = parseReceiptText(text, { fileName: image.fileName, history: this.store.items(), categories: this.categories.all() });
+      // E-wallet receipts ("Sent to JUAN DELA CRUZ"): the person paid is the better merchant.
+      const counterparty = parseTransaction({ id: '', packageName: '', title: '', text, postedAt: Date.now() })?.counterparty;
+      if (counterparty && suggestion.type === 'receipt') suggestion = { ...suggestion, merchant: counterparty };
       this.applySuggestion(suggestion);
     } catch {
       if (request === this.readRequest) this.autoFill.set({ message: "Couldn't read this image", summary: 'You can still fill in the details yourself.' });
@@ -495,4 +543,9 @@ interface FormValue {
   currencyCode: string;
   purchaseDate: string;
   warrantyUntil: string;
+}
+
+function fromFile(file: File): SelectedImage {
+  const extension = file.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'png';
+  return { sourceUrl: URL.createObjectURL(file), mimeType: file.type, extension, fileName: file.name };
 }

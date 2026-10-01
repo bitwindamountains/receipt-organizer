@@ -39,6 +39,18 @@ Run `npm run cap:sync` again after adding or updating a Capacitor plugin. Text r
 
 The exact production dependency set is pinned by `package-lock.json`. Test image selection, SQLite persistence, process recreation, sharing, and signed AAB installation on a physical device before promotion.
 
+## Auto-capture
+
+All on the device; turn it on in Settings > Auto-capture.
+
+- **Payment notifications (Android):** a `NotificationListenerService` keeps only notifications with a peso amount and a payment word, skipping chat and SMS apps. They are queued in app storage until SnapSort opens, then parsed (`core/capture/transaction-parser.ts`) into receipts with a drawn receipt image. Duplicates are skipped by reference number. "Try it with a sample" runs the same pipeline on any platform.
+- **Screenshot inbox:** on Android, new screenshots are read from the gallery with `READ_MEDIA_IMAGES`. In Chrome or Edge on a computer, the user picks a screenshots folder. Payment screenshots are read and offered in `/inbox`.
+- **Share into SnapSort (Android):** share one or more images from any app and they open on the Add page. In the browser, paste (Ctrl/⌘+V) or drop images on the Add page.
+
+Native code lives in `android/app/src/main/java/app/snapsort/mobile/` (`SnapSortCapturePlugin`, `NotificationCaptureService`, `CaptureStore`). To build without Android Studio, use JDK 21 with `ANDROID_HOME` set and run `cd android && ./gradlew assembleDebug`.
+
+Google Play: notification access and `READ_MEDIA_IMAGES` need the Play Console permission declarations and an in-app prominent disclosure (the Settings dialog explains notification access before opening system settings). Review the Data safety form before release.
+
 ## Privacy boundary
 
 Version 0.1 stores metadata in on-device SQLite and imported image copies in app-private storage on Android. The browser development fallback uses localStorage for metadata and IndexedDB for image blobs. Receipt reading runs on the device (ML Kit on Android, bundled Tesseract in the browser); images and text never leave it. Do not add network SDKs or sensitive-data logging without a privacy and Play Data safety review.

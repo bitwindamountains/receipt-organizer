@@ -10,9 +10,10 @@ import {
   IonTabs,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline } from 'ionicons/icons';
+import { add, flash, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline } from 'ionicons/icons';
 import { ItemStore } from '../core/services/item.store';
 import { ReminderService } from '../core/services/reminder.service';
+import { CaptureService } from '../core/capture/capture.service';
 
 @Component({
   selector: 'app-tabs-shell',
@@ -58,6 +59,8 @@ export class TabsShell {
   constructor() {
     // Starts keeping warranty reminders in sync with the library.
     inject(ReminderService);
-    addIcons({ add, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline });
+    // Imports captured payments, screenshots, and shared images.
+    inject(CaptureService).start();
+    addIcons({ add, flash, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline });
   }
 }

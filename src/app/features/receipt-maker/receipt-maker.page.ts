@@ -222,7 +222,7 @@ export class ReceiptMakerPage {
   protected readonly draft = computed<ReceiptDraft>(() => ({
     mode: this.mode(),
     issuer: this.mode() === 'sold' ? this.businessName() : this.storeName(),
-    issuerDetails: this.businessDetails(),
+    issuerDetails: this.mode() === 'sold' ? this.businessDetails() : '',
     customer: this.customer(),
     number: this.number(),
     date: this.date(),

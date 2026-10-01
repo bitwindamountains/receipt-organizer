@@ -16,11 +16,12 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, close, cloudOfflineOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline } from 'ionicons/icons';
+import { add, albumsOutline, close, cloudOfflineOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline } from 'ionicons/icons';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
 import { PreferencesStore } from '../../core/services/preferences.store';
+import { CaptureService } from '../../core/capture/capture.service';
 
 @Component({
   selector: 'app-settings',
@@ -61,8 +62,56 @@ import { PreferencesStore } from '../../core/services/preferences.store';
           </ion-item>
         </ion-list>
 
+        <p class="group-title">Auto-capture</p>
+        <ion-list inset="true" class="reveal capture-list" style="--i: 3">
+          <ion-item lines="full" [disabled]="!capture.native">
+            <ion-icon slot="start" name="flash-outline" aria-hidden="true" />
+            <ion-toggle [checked]="capture.status().enabled" (ionChange)="toggleNotifications($event)">
+              <ion-label>
+                <h3>Capture payment notifications</h3>
+                <p>Adds GCash, Maya, and bank payments from their notifications. Read on this device; other notifications are ignored.</p>
+                @if (!capture.native) {
+                  <p class="capture-state">Available in the Android app</p>
+                } @else if (capture.status().enabled && !capture.status().accessGranted) {
+                  <p class="capture-state capture-state--warn">Waiting for Notification access</p>
+                } @else if (capture.status().enabled) {
+                  <p class="capture-state capture-state--on">On · new payments are added automatically</p>
+                }
+              </ion-label>
+            </ion-toggle>
+          </ion-item>
+          @if (capture.native && capture.status().enabled && !capture.status().accessGranted) {
+            <ion-item lines="full" button [detail]="true" (click)="capture.openAccessSettings()">
+              <ion-label>Open Notification access settings</ion-label>
+            </ion-item>
+          }
+          <ion-item lines="full" [disabled]="!capture.native && !capture.supportsFolder">
+            <ion-icon slot="start" name="albums-outline" aria-hidden="true" />
+            <ion-toggle [checked]="preferences.screenshotInbox()" (ionChange)="toggleInbox($event)">
+              <ion-label>
+                <h3>Screenshot inbox</h3>
+                <p>{{ capture.native ? 'Finds new payment screenshots in your gallery and offers to add them.' : 'Watches a folder of screenshots on this computer and offers new payments.' }}</p>
+                @if (!capture.native && !capture.supportsFolder) {
+                  <p class="capture-state">Needs Chrome or Edge on a computer</p>
+                } @else if (!capture.native && preferences.screenshotInbox() && capture.folderName()) {
+                  <p class="capture-state capture-state--on">Watching “{{ capture.folderName() }}”</p>
+                }
+              </ion-label>
+            </ion-toggle>
+          </ion-item>
+          @if (!capture.native && preferences.screenshotInbox()) {
+            <ion-item lines="full" button [detail]="true" (click)="capture.chooseFolder()">
+              <ion-label>Change screenshots folder</ion-label>
+            </ion-item>
+          }
+          <ion-item lines="none" button [detail]="false" (click)="trySample()">
+            <ion-icon slot="start" name="sparkles-outline" aria-hidden="true" />
+            <ion-label><h3>Try it with a sample</h3><p>Adds a sample GCash bill payment through the same steps a real notification takes.</p></ion-label>
+          </ion-item>
+        </ion-list>
+
         <p class="group-title">Your data</p>
-        <ion-list inset="true" class="reveal" style="--i: 3">
+        <ion-list inset="true" class="reveal" style="--i: 4">
           <ion-item lines="full">
             <ion-icon slot="start" name="images-outline" aria-hidden="true" />
             <ion-label><h3>Storage</h3><p>{{ store.items().length }} saved {{ store.items().length === 1 ? 'item' : 'items' }}</p></ion-label>
@@ -94,6 +143,7 @@ export class SettingsPage {
   protected readonly categories = inject(CategoryStore);
   protected readonly store = inject(ItemStore);
   protected readonly preferences = inject(PreferencesStore);
+  protected readonly capture = inject(CaptureService);
   private readonly images = inject(ImageStorageService);
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
@@ -101,8 +151,53 @@ export class SettingsPage {
   protected readonly categoryError = signal('');
 
   constructor() {
-    addIcons({ add, close, cloudOfflineOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline });
+    addIcons({ add, albumsOutline, close, cloudOfflineOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline });
     void this.store.load();
+  }
+
+  async toggleNotifications(event: Event): Promise<void> {
+    const toggle = event.target as HTMLIonToggleElement;
+    const enabled = toggle.checked;
+    if (enabled && !this.capture.status().accessGranted) {
+      const alert = await this.alerts.create({
+        header: 'Allow Notification access',
+        message: 'Android will open its Notification access settings. Turn on SnapSort there, then come back. SnapSort only keeps notifications that look like payments, and they never leave this device.',
+        buttons: [
+          { text: 'Not now', role: 'cancel' },
+          { text: 'Continue', role: 'confirm' },
+        ],
+      });
+      await alert.present();
+      const { role } = await alert.onDidDismiss();
+      if (role !== 'confirm') {
+        toggle.checked = false;
+        return;
+      }
+    }
+    await this.capture.setCaptureEnabled(enabled);
+  }
+
+  async toggleInbox(event: Event): Promise<void> {
+    const toggle = event.target as HTMLIonToggleElement;
+    if (!toggle.checked) {
+      this.capture.disableInbox();
+      return;
+    }
+    if (await this.capture.enableInbox()) return;
+    toggle.checked = false;
+    const toast = await this.toasts.create({
+      message: this.capture.native ? 'Photo access is needed to find payment screenshots.' : 'No folder was chosen.',
+      duration: 2400,
+    });
+    await toast.present();
+  }
+
+  async trySample(): Promise<void> {
+    const item = await this.capture.addSample();
+    if (!item) {
+      const toast = await this.toasts.create({ message: 'The sample could not be added.', duration: 2200 });
+      await toast.present();
+    }
   }
 
   addCategory(): void {

@@ -77,7 +77,7 @@ interface Column {
               @if (data.biggest) { <small>{{ data.biggest.title }}</small> }
             </a>
             @if (data.income.count) {
-              <div class="kpi reveal" style="--i: 4"><span class="kpi-icon kpi-icon--gold"><ion-icon name="storefront-outline" aria-hidden="true" /></span><span class="kpi-label">Sales</span><strong>{{ money(data.income.amount) }}</strong><small>{{ data.income.count }} {{ data.income.count === 1 ? 'receipt' : 'receipts' }} issued</small></div>
+              <div class="kpi reveal" style="--i: 4"><span class="kpi-icon kpi-icon--gold"><ion-icon name="storefront-outline" aria-hidden="true" /></span><span class="kpi-label">Money in</span><strong>{{ money(data.income.amount) }}</strong><small>Sales and transfers received · {{ data.income.count }}</small></div>
             }
           </section>
 
