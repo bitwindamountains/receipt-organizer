@@ -1,6 +1,13 @@
 # Production Status
 
-Updated: October 1, 2026 - design and motion pass
+Updated: October 1, 2026 - design and motion pass; performance and import improvements
+
+## Performance and import improvements (October 1, 2026)
+
+- Startup bundle cut from 1.16 MB to 505 kB. Eager code (`app.ts`, `app.config.ts`) must not import the `@ionic/angular` root barrel, or esbuild moves every lazily used Ionic component into `main`. `provideIonic()` in `app.config.ts` mirrors `provideIonicAngular`; re-check it when upgrading Ionic.
+- Multi-image import: Add accepts up to 10 images with a filmstrip, shared details, save progress, and retry for images that fail. Editing is still one image.
+- Grid thumbnails: saving writes a 480 px JPEG to `thumbs/<id>.jpg`; cards load it, and older items get one backfilled on first display. Deleting removes it. The browser fallback reuses one IndexedDB connection.
+- Library groups date-sorted results by month under sticky headers with item counts and receipt totals.
 
 ## Design and motion pass (October 1, 2026)
 
@@ -45,8 +52,9 @@ Fixes in the same pass:
 ## Release blockers
 
 - Implement and test versioned export/restore before any public rollout
-- Add generated thumbnails and process-death/staging reconciliation for large imports
-- Complete multi-image import behavior and category management
+- Add process-death/staging reconciliation for large imports (thumbnails and multi-image import are done; an interrupted batch can still leave orphaned files)
+- Complete category management (rename and merge)
+- Measure thumbnail generation time for large photos on a low-end Android device
 - Replace privacy-policy placeholders and host the policy on a stable HTTPS URL
 - Install Android Studio/JDK/SDK locally; build and smoke-test a signed AAB on physical devices
 - Run accessibility, low-storage, process-recreation, and upgrade migration tests
@@ -55,8 +63,8 @@ Fixes in the same pass:
 ## Verification recorded
 
 - `npm run typecheck`: pass
-- `npm test -- --watch=false --no-progress`: 7 tests pass
-- `npm run build:production -- --no-progress`: pass
+- `npm test -- --watch=false`: 13 tests pass (October 1, 2026)
+- `npm run build:production`: pass; initial bundle 507 kB (October 1, 2026)
 - Capacitor Android platform sync: pass; API 36 / minimum API 24
 - `npm audit --omit=dev`: zero production dependency vulnerabilities
 - Browser HTTP smoke check: localhost returned 200; visual automation unavailable in this session
