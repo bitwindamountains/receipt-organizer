@@ -173,6 +173,8 @@ ion-searchbar.sn-search.searchbar-has-focus { --box-shadow: 0 0 0 3px rgba(var(-
 .slip-label { grid-column: 1 / -1; margin: 0; color: var(--ion-color-medium); font-family: var(--sn-font-mono); font-size: .7rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
 .slip-total { font-size: 1.8rem; font-weight: 780; line-height: 1.1; letter-spacing: -.03em; }
 .slip-meta { color: var(--ion-color-medium); font-family: var(--sn-font-mono); font-size: .76rem; text-align: right; }
+a.month-slip { text-decoration: none; }
+.slip-cta { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--ion-color-primary); font-size: .82rem; font-weight: 750; }
 @media (prefers-reduced-motion: no-preference) {
   .month-slip { animation: sn-print 900ms var(--sn-ease-out) 300ms both; }
 }

@@ -10,7 +10,7 @@ import {
   IonTabs,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, home, homeOutline, images, imagesOutline, settings, settingsOutline } from 'ionicons/icons';
+import { add, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline } from 'ionicons/icons';
 import { ItemStore } from '../core/services/item.store';
 
 @Component({
@@ -28,6 +28,11 @@ import { ItemStore } from '../core/services/item.store';
           <ion-icon name="images-outline" class="icon-idle" aria-hidden="true" />
           <ion-icon name="images" class="icon-active" aria-hidden="true" />
           <ion-label>Library</ion-label>
+        </ion-tab-button>
+        <ion-tab-button tab="insights" href="/insights">
+          <ion-icon name="stats-chart-outline" class="icon-idle" aria-hidden="true" />
+          <ion-icon name="stats-chart" class="icon-active" aria-hidden="true" />
+          <ion-label>Insights</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="settings" href="/settings">
           <ion-icon name="settings-outline" class="icon-idle" aria-hidden="true" />
@@ -50,6 +55,6 @@ export class TabsShell {
   protected readonly isEmpty = computed(() => this.store.ready() && this.store.items().length === 0);
 
   constructor() {
-    addIcons({ add, home, homeOutline, images, imagesOutline, settings, settingsOutline });
+    addIcons({ add, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline });
   }
 }

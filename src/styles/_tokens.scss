@@ -49,6 +49,11 @@
   --sn-glow-a: rgba(38, 87, 75, .2);
   --sn-glow-b: rgba(217, 120, 61, .17);
   --sn-stage: #111916;
+  // Chart marks (contrast-checked against the card surface: accent 8.2:1, context 3.1:1).
+  --viz-accent: #26574b;
+  --viz-context: #749a8d;
+  --viz-grid: #e7e8e2;
+  --viz-baseline: #c3c8c2;
 
   --sn-shadow-1: 0 1px 2px rgba(21, 32, 29, .05), 0 2px 8px rgba(21, 32, 29, .04);
   --sn-shadow-2: 0 2px 6px rgba(21, 32, 29, .05), 0 14px 34px rgba(21, 32, 29, .08);
@@ -113,6 +118,11 @@
     --sn-glow-a: rgba(120, 201, 176, .15);
     --sn-glow-b: rgba(239, 154, 98, .11);
     --sn-stage: #050908;
+    // Accent 8.8:1, context 3.6:1 on the dark card surface.
+    --viz-accent: #78c9b0;
+    --viz-context: #557a6e;
+    --viz-grid: #222d29;
+    --viz-baseline: #3b4b46;
 
     --sn-shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
     --sn-shadow-2: 0 2px 6px rgba(0, 0, 0, .3), 0 14px 34px rgba(0, 0, 0, .3);

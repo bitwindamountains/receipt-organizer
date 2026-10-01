@@ -74,14 +74,15 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
           </section>
 
           @if (monthSummary(); as summary) {
-            <button class="month-slip" (click)="openLibrary('receipt')">
+            <a class="month-slip" routerLink="/insights" [attr.aria-label]="summary.month + ' receipts total ' + summary.total + '. Open insights'">
               <p class="slip-label">{{ summary.month }} receipts</p>
               <span class="slip-total num">{{ summary.total }}</span>
               <span class="slip-meta">
                 {{ summary.count }} {{ summary.count === 1 ? 'receipt' : 'receipts' }}
                 @if (summary.otherCurrencies) { <br />+{{ summary.otherCurrencies }} other {{ summary.otherCurrencies === 1 ? 'currency' : 'currencies' }} }
               </span>
-            </button>
+              <span class="slip-cta">See insights <ion-icon name="arrow-forward" aria-hidden="true" /></span>
+            </a>
           }
 
           <section class="quick-categories reveal" style="--i: 7">

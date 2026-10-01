@@ -1,15 +1,20 @@
 import { DestroyRef, Directive, ElementRef, effect, inject, input } from '@angular/core';
 
-/** Animates an integer from its previous value to the new one. Respects reduced motion. */
+/** Animates a number from its previous value to the new one. Respects reduced motion. */
 @Directive({ selector: '[appCountUp]' })
 export class CountUpDirective {
   readonly appCountUp = input.required<number>();
+  /** Formats each frame, e.g. minor units as currency. Defaults to the plain integer. */
+  readonly countFormat = input<(value: number) => string>(String);
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private current = 0;
   private frame = 0;
 
   constructor() {
-    effect(() => this.animateTo(this.appCountUp()));
+    effect(() => {
+      this.countFormat();
+      this.animateTo(this.appCountUp());
+    });
     inject(DestroyRef).onDestroy(() => cancelAnimationFrame(this.frame));
   }
 
@@ -34,6 +39,6 @@ export class CountUpDirective {
 
   private render(value: number): void {
     this.current = value;
-    this.element.textContent = String(value);
+    this.element.textContent = this.countFormat()(value);
   }
 }
