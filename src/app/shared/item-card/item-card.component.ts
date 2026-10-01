@@ -36,7 +36,7 @@ import { displayTitle, formatAmount } from '../../core/utils/item-display';
 })
 export class ItemCardComponent {
   readonly item = input.required<SavedItem>();
-  protected readonly imageUrl = injectImageUrl(() => this.item().imageKey);
+  protected readonly imageUrl = injectImageUrl(() => this.item().imageKey, 'thumb');
   private readonly loadedUrl = signal('');
   protected readonly loaded = computed(() => Boolean(this.imageUrl()) && this.loadedUrl() === this.imageUrl());
   protected readonly displayTitle = displayTitle;
