@@ -108,7 +108,11 @@ const MAX_IMAGES = 10;
                   <ion-input formControlName="amount" label="Amount (optional)" labelPlacement="stacked" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0.00" errorText="Enter an amount of zero or more." />
                 </ion-item>
               </div>
-              <ion-item lines="none"><ion-input formControlName="purchaseDate" label="Purchase date (optional)" labelPlacement="stacked" type="date" /></ion-item>
+              <ion-item><ion-input formControlName="purchaseDate" label="Purchase date (optional)" labelPlacement="stacked" type="date" /></ion-item>
+              <ion-item lines="none">
+                <ion-input formControlName="warrantyUntil" label="Warranty or return until (optional)" labelPlacement="stacked" type="date" />
+                <ion-note slot="helper">We'll remind you a week before it ends</ion-note>
+              </ion-item>
             </div>
           }
 
@@ -176,6 +180,7 @@ export class AddItemPage implements OnInit {
     amount: [null as number | null, Validators.min(0)],
     currencyCode: [readLastCurrency()],
     purchaseDate: [''],
+    warrantyUntil: [''],
   });
   private readonly selectedType = toSignal(this.form.controls.type.valueChanges, {
     initialValue: this.form.controls.type.value,
@@ -206,6 +211,7 @@ export class AddItemPage implements OnInit {
       amount: item.amountMinor === null ? null : item.amountMinor / 100,
       currencyCode: item.currencyCode ?? readLastCurrency(),
       purchaseDate: item.purchaseDate ?? '',
+      warrantyUntil: item.warrantyUntil ?? '',
     });
     this.selection.set([{
       sourceUrl: await this.images.urlFor(item.imageKey),
@@ -349,6 +355,8 @@ export class AddItemPage implements OnInit {
       currencyCode: isReceipt && amount !== null ? value.currencyCode : null,
       purchaseDate: isReceipt ? value.purchaseDate || null : null,
       isFavorite: this.existing()?.isFavorite ?? false,
+      flow: this.existing()?.flow ?? 'expense',
+      warrantyUntil: isReceipt ? value.warrantyUntil || null : null,
     };
   }
 

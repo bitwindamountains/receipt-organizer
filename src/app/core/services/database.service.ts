@@ -47,9 +47,9 @@ export class DatabaseService {
 
     await this.db.run(
       `INSERT OR REPLACE INTO items (
-        id, type, image_key, mime_type, title, notes, category, tags_json,
-        merchant, amount_minor, currency_code, purchase_date, is_favorite, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        id, type, image_key, mime_type, title, notes, category, tags_json, merchant, amount_minor,
+        currency_code, purchase_date, is_favorite, flow, warranty_until, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.id,
         item.type,
@@ -64,6 +64,8 @@ export class DatabaseService {
         item.currencyCode,
         item.purchaseDate,
         item.isFavorite ? 1 : 0,
+        item.flow,
+        item.warrantyUntil,
         item.createdAt,
         item.updatedAt,
       ],
@@ -120,16 +122,30 @@ export class DatabaseService {
       INSERT OR IGNORE INTO schema_migrations(version, applied_at)
         VALUES (1, datetime('now'));
     `);
+    // Columns added after v1. ALTER TABLE ADD COLUMN keeps existing rows intact.
     const columns = await this.db.query('PRAGMA table_info(items)');
-    if (!(columns.values ?? []).some((column) => column['name'] === 'is_favorite')) {
-      await this.db.execute('ALTER TABLE items ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0;');
+    const existingColumns = new Set((columns.values ?? []).map((column) => String(column['name'])));
+    const additions: [string, string][] = [
+      ['is_favorite', 'INTEGER NOT NULL DEFAULT 0'],
+      ['flow', "TEXT NOT NULL DEFAULT 'expense' CHECK(flow IN ('expense', 'income'))"],
+      ['warranty_until', 'TEXT'],
+    ];
+    for (const [name, definition] of additions) {
+      if (!existingColumns.has(name)) await this.db.execute(`ALTER TABLE items ADD COLUMN ${name} ${definition};`);
     }
+    await this.db.execute(`INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (2, datetime('now'));`);
   }
 
   private readWebItems(): SavedItem[] {
     try {
       const items = JSON.parse(localStorage.getItem(WEB_STORAGE_KEY) ?? '[]') as SavedItem[];
-      return items.map((item) => ({ ...item, isFavorite: item.isFavorite ?? false }));
+      // Items saved by older versions lack newer fields.
+      return items.map((item) => ({
+        ...item,
+        isFavorite: item.isFavorite ?? false,
+        flow: item.flow ?? 'expense',
+        warrantyUntil: item.warrantyUntil ?? null,
+      }));
     } catch {
       return [];
     }
@@ -150,6 +166,8 @@ export class DatabaseService {
       currencyCode: (row['currency_code'] as string | null) ?? null,
       purchaseDate: (row['purchase_date'] as string | null) ?? null,
       isFavorite: Number(row['is_favorite'] ?? 0) === 1,
+      flow: row['flow'] === 'income' ? 'income' : 'expense',
+      warrantyUntil: (row['warranty_until'] as string | null) ?? null,
       createdAt: String(row['created_at']),
       updatedAt: String(row['updated_at']),
     };

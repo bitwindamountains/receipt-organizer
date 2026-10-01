@@ -44,11 +44,14 @@ export interface MonthlyReceiptSummary extends ReceiptTotal {
   month: string;
 }
 
-/** Totals receipts with an amount in their most-used currency; null when there are none. */
+/**
+ * Totals spending receipts (not receipts issued to customers) in their most-used
+ * currency; null when there are none.
+ */
 export function receiptTotal(items: SavedItem[]): ReceiptTotal | null {
   const totals = new Map<string, { minor: number; count: number }>();
   for (const item of items) {
-    if (item.type !== 'receipt' || item.amountMinor === null || !item.currencyCode) continue;
+    if (item.type !== 'receipt' || item.flow === 'income' || item.amountMinor === null || !item.currencyCode) continue;
     const total = totals.get(item.currencyCode) ?? { minor: 0, count: 0 };
     total.minor += item.amountMinor;
     total.count += 1;

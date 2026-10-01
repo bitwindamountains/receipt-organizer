@@ -15,6 +15,8 @@ const item: SavedItem = {
   currencyCode: 'PHP',
   purchaseDate: '2026-09-11',
   isFavorite: false,
+  flow: 'expense',
+  warrantyUntil: null,
   createdAt: '2026-09-11T04:00:00.000Z',
   updatedAt: '2026-09-11T04:00:00.000Z',
 };
@@ -49,6 +51,7 @@ describe('item display utilities', () => {
       { ...item, id: 'old', amountMinor: 9900, purchaseDate: '2026-08-30' },
       { ...item, id: 'usd', amountMinor: 1000, currencyCode: 'USD' },
       { ...item, id: 'shot', type: 'screenshot' },
+      { ...item, id: 'sold', flow: 'income', amountMinor: 999900 },
     ];
     const summary = monthlyReceiptSummary(receipts, now);
     expect(summary?.count).toBe(2);
