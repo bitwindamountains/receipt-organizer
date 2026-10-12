@@ -254,24 +254,28 @@ export class CaptureService {
     this.scanning.set(true);
     try {
       await this.store.load();
-      const since = readNumber(INBOX_SINCE) ?? Date.now() - 3 * DAY_MS;
+      let since = readNumber(INBOX_SINCE) ?? Date.now() - 3 * DAY_MS;
       const seen = readSet(INBOX_SEEN);
-      const candidates = this.native ? await this.deviceCandidates(since) : await this.folderCandidates(since);
-      let newest = since;
-      for (const candidate of candidates) {
-        newest = Math.max(newest, candidate.takenAt);
-        if (seen.has(candidate.id)) {
-          if (candidate.source === 'folder') this.images.release(candidate.previewUrl);
-          continue;
+      // Candidates come oldest first, a page at a time, so `since` never jumps past a screenshot not yet read.
+      // ponytail: more than SCAN_LIMIT screenshots in the same second would skip the extras; page by id if that shows up.
+      let candidates: Awaited<ReturnType<CaptureService['deviceCandidates']>>;
+      do {
+        candidates = this.native ? await this.deviceCandidates(since) : await this.folderCandidates(since);
+        for (const candidate of candidates) {
+          since = Math.max(since, candidate.takenAt);
+          if (seen.has(candidate.id)) {
+            if (candidate.source === 'folder') this.images.release(candidate.previewUrl);
+            continue;
+          }
+          seen.add(candidate.id);
+          const entry = await this.readCandidate(candidate).catch(() => null);
+          if (entry) this.inbox.update((entries) => [entry, ...entries]);
+          else if (candidate.source === 'folder') this.images.release(candidate.previewUrl);
         }
-        seen.add(candidate.id);
-        const entry = await this.readCandidate(candidate).catch(() => null);
-        if (entry) this.inbox.update((entries) => [entry, ...entries]);
-        else if (candidate.source === 'folder') this.images.release(candidate.previewUrl);
-      }
-      writeNumber(INBOX_SINCE, newest);
-      writeSet(INBOX_SEEN, seen);
-      persistEntries(this.inbox());
+        writeNumber(INBOX_SINCE, since);
+        writeSet(INBOX_SEEN, seen);
+        persistEntries(this.inbox());
+      } while (candidates.length === SCAN_LIMIT);
     } finally {
       this.scanning.set(false);
     }
@@ -398,7 +402,7 @@ export class CaptureService {
       if (file.lastModified > since) files.push(file);
     }
     return files
-      .sort((a, b) => b.lastModified - a.lastModified)
+      .sort((a, b) => a.lastModified - b.lastModified)
       .slice(0, SCAN_LIMIT)
       .map((file) => ({
         id: `folder:${file.name}:${file.lastModified}`,

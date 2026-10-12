@@ -159,7 +159,10 @@ public class SnapSortCapturePlugin extends Plugin {
         getPhotosPermission(call);
     }
 
-    /** Screenshots added after `since` (epoch ms), newest first. Read-only; nothing is copied. */
+    /**
+     * Screenshots added after `since` (epoch ms), oldest first, so the caller can page forward
+     * without skipping any. Read-only; nothing is copied.
+     */
     @PluginMethod
     public void getRecentScreenshots(PluginCall call) {
         if (getPermissionState(photosAlias()) != PermissionState.GRANTED) {
@@ -187,7 +190,7 @@ public class SnapSortCapturePlugin extends Plugin {
         try (
             Cursor cursor = getContext()
                 .getContentResolver()
-                .query(collection, projection, selection, args, MediaStore.Images.Media.DATE_ADDED + " DESC")
+                .query(collection, projection, selection, args, MediaStore.Images.Media.DATE_ADDED + " ASC")
         ) {
             if (cursor != null) {
                 int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID);
