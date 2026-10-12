@@ -34,6 +34,7 @@ import { TextRecognitionService } from '../../core/ocr/text-recognition.service'
 import { parseTransaction } from '../../core/capture/transaction-parser';
 import { injectGoBack } from '../../core/utils/navigation';
 import { ReplayAnimationDirective } from '../../shared/replay-animation.directive';
+import { TypedField, detailsForImage } from './batch-details';
 
 type AutoFillField = 'type' | 'category' | 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate';
 const MAX_IMAGES = 10;
@@ -91,7 +92,7 @@ const MAX_IMAGES = 10;
                   <button type="button" class="film-add" (click)="addMore()" [disabled]="saving()" aria-label="Add more images"><ion-icon name="add" aria-hidden="true" /><span>Add</span></button>
                 }
               </div>
-              @if (isBatch()) { <p class="batch-note" animate.enter="enter-fade">The details below apply to all {{ selection().length }} images.</p> }
+              @if (isBatch()) { <p class="batch-note" animate.enter="enter-fade">The details below apply to all {{ selection().length }} images. Store, amount, and date are read from each image unless you type them.</p> }
             }
           } @else {
             <button class="picker" type="button" (click)="addMore()">
@@ -212,6 +213,8 @@ export class AddItemPage implements OnInit {
   protected readonly filled = signal<ReadonlySet<AutoFillField>>(new Set());
   private filledTimer?: ReturnType<typeof setTimeout>;
   private readRequest = 0;
+  /** The image the form's auto-filled values came from; in a batch they belong to it alone. */
+  private autoFilledFrom: string | null = null;
   protected readonly error = signal('');
   protected readonly existing = signal<SavedItem | null>(null);
   /** Changes on each newly picked image so the scan sweep replays. */
@@ -333,18 +336,33 @@ export class AddItemPage implements OnInit {
     this.reading.set(true);
     this.autoFill.set(null);
     try {
-      const text = await this.recognition.read(image);
+      const suggestion = await this.suggestionFor(image);
       if (request !== this.readRequest) return;
-      let suggestion = parseReceiptText(text, { fileName: image.fileName, history: this.store.items(), categories: this.categories.all() });
-      // E-wallet receipts ("Sent to JUAN DELA CRUZ"): the person paid is the better merchant.
-      const counterparty = parseTransaction({ id: '', packageName: '', title: '', text, postedAt: Date.now() })?.counterparty;
-      if (counterparty && suggestion.type === 'receipt') suggestion = { ...suggestion, merchant: counterparty };
+      this.autoFilledFrom = image.sourceUrl;
       this.applySuggestion(suggestion);
     } catch {
       if (request === this.readRequest) this.autoFill.set({ message: "Couldn't read this image", summary: 'You can still fill in the details yourself.' });
     } finally {
       if (request === this.readRequest) this.reading.set(false);
     }
+  }
+
+  private async suggestionFor(image: SelectedImage): Promise<ReceiptSuggestion> {
+    const text = await this.recognition.read(image);
+    const suggestion = parseReceiptText(text, { fileName: image.fileName, history: this.store.items(), categories: this.categories.all() });
+    // E-wallet receipts ("Sent to JUAN DELA CRUZ"): the person paid is the better merchant.
+    const counterparty = parseTransaction({ id: '', packageName: '', title: '', text, postedAt: Date.now() })?.counterparty;
+    return counterparty && suggestion.type === 'receipt' ? { ...suggestion, merchant: counterparty } : suggestion;
+  }
+
+  /** In a batch, each image keeps its own store, amount, and date (see detailsForImage). */
+  private async detailsFor(image: SelectedImage, shared: Omit<NewSavedItem, 'imageKey' | 'mimeType'>, batch: boolean): Promise<Omit<NewSavedItem, 'imageKey' | 'mimeType'>> {
+    if (!batch || shared.type !== 'receipt' || image.sourceUrl === this.autoFilledFrom) return shared;
+    const controls = this.form.controls;
+    const typed = new Set((['merchant', 'amount', 'currencyCode', 'purchaseDate'] as TypedField[]).filter((field) => controls[field].dirty));
+    const needsReading = typed.size < 4 && this.preferences.autoRead() && this.recognition.canRead(image);
+    const own = needsReading ? await this.suggestionFor(image).catch(() => null) : null;
+    return detailsForImage(shared, own, typed, controls.currencyCode.value);
   }
 
   undoAutoFill(): void {
@@ -470,14 +488,16 @@ export class AddItemPage implements OnInit {
   private async saveNew(): Promise<void> {
     const queue = this.selection();
     const details = this.details();
+    const batch = queue.length > 1;
     const failed: SelectedImage[] = [];
     let saved = 0;
     for (const image of queue) {
       this.progress.set(queue.length > 1 ? { done: saved + failed.length, total: queue.length } : null);
       let imageKey = '';
       try {
+        const own = await this.detailsFor(image, details, batch);
         imageKey = await this.images.persist(crypto.randomUUID(), image);
-        await this.store.create({ ...details, imageKey, mimeType: image.mimeType });
+        await this.store.create({ ...own, imageKey, mimeType: image.mimeType });
         this.images.release(image.sourceUrl);
         saved += 1;
       } catch {
