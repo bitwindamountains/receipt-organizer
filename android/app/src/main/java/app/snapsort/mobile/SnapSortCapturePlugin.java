@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
+import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -23,6 +24,7 @@ import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -53,6 +55,8 @@ public class SnapSortCapturePlugin extends Plugin {
     static final String PHOTOS = "photos";
     static final String LEGACY_PHOTOS = "legacyPhotos";
     private static final int MAX_SCREENSHOTS = 20;
+    // Phone photos and screenshots are well under this; anything bigger is not a receipt image.
+    private static final long MAX_SHARED_BYTES = 25L * 1024 * 1024;
 
     private static SnapSortCapturePlugin instance;
     private final List<JSObject> pendingShares = new ArrayList<>();
@@ -264,10 +268,22 @@ public class SnapSortCapturePlugin extends Plugin {
         }
     }
 
+    /**
+     * Only images another app serves through a content provider are accepted. A file:// URI or one of
+     * SnapSort's own providers would otherwise be read with SnapSort's permissions, letting another app
+     * pull SnapSort's private files (database, captured notifications) into the library.
+     */
+    private boolean isForeignImage(Uri uri, String mimeType) {
+        if (!ContentResolver.SCHEME_CONTENT.equals(uri.getScheme()) || uri.getAuthority() == null) return false;
+        if (mimeType == null || !mimeType.startsWith("image/")) return false;
+        ProviderInfo provider = getContext().getPackageManager().resolveContentProvider(uri.getAuthority(), 0);
+        return provider == null || !getContext().getPackageName().equals(provider.packageName);
+    }
+
     private JSObject copyToCache(Uri uri) {
         ContentResolver resolver = getContext().getContentResolver();
         String mimeType = resolver.getType(uri);
-        if (mimeType == null || !mimeType.startsWith("image/")) mimeType = "image/jpeg";
+        if (!isForeignImage(uri, mimeType)) return null;
         String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
         if (extension == null) extension = "jpg";
         File directory = new File(getContext().getCacheDir(), "shared");
@@ -276,8 +292,13 @@ public class SnapSortCapturePlugin extends Plugin {
         try (InputStream input = resolver.openInputStream(uri); OutputStream output = new FileOutputStream(target)) {
             if (input == null) return null;
             byte[] buffer = new byte[64 * 1024];
+            long total = 0;
             int read;
-            while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
+            while ((read = input.read(buffer)) != -1) {
+                total += read;
+                if (total > MAX_SHARED_BYTES) throw new IOException("Shared image is too large.");
+                output.write(buffer, 0, read);
+            }
         } catch (Exception error) {
             //noinspection ResultOfMethodCallIgnored
             target.delete();
