@@ -36,6 +36,23 @@ describe('transaction parser', () => {
     expect(parseTransaction(note('com.globe.gcash.android', 'GCash', 'Your GCash was sent successfully.'))).toBeNull();
   });
 
+  it('does not read "refund" as a reference number', () => {
+    const a = parseTransaction(note('com.globe.gcash.android', 'GCash', 'You received a refund of PHP 200.00 from Lazada.'))!;
+    expect(a.reference).toBeNull();
+    const b = parseTransaction(note('com.globe.gcash.android', 'GCash', 'Your refund of PHP 250.00 from Lazada has been credited. Ref 9988776655'))!;
+    expect(b.reference).toBe('9988776655');
+  });
+
+  it('stops the reference at the words after it', () => {
+    expect(parseTransaction(note('com.paymaya', 'Maya', 'Payment of ₱99.00 to 7-Eleven. Ref. No. 1234567890 has been processed'))!.reference).toBe('1234567890');
+    expect(parseTransaction(note('com.paymaya', 'Maya', 'You paid ₱99.00 to 7-Eleven. Your Ref no is ABC123456'))!.reference).toBe('ABC123456');
+  });
+
+  it('reads "sent you" as income', () => {
+    const result = parseTransaction(note('com.globe.gcash.android', 'GCash', 'JUAN DELA CRUZ sent you PHP 500.00. Ref No. 1234567890.'));
+    expect(result).toEqual(expect.objectContaining({ flow: 'income', amount: 500 }));
+  });
+
   it('keys duplicates by reference, or by amount and minute', () => {
     const a = parseTransaction(note('com.globe.gcash.android', 'GCash', 'You have sent PHP 500.00 to JUAN. Ref. No. 1234-5678-90'))!;
     const b = parseTransaction(note('com.globe.gcash.android', 'GCash', 'Sent PHP 500.00 to JUAN. Ref No. 1234567890'))!;

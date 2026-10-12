@@ -43,7 +43,9 @@ const BALANCE_CONTEXT = /(balance|bal\.?|available|limit)\s*(is|of|:)?\s*$/i;
 const PROMO = /\b(promo|cashback|voucher|win|offer|discount|up to|get ₱|earn|rewards?|deal|sale|loan offer|pre-?approved)\b/i;
 const INCOME = /\b(received|receive|credited|cash[- ]?in|deposited|incoming|refund(ed)?|sent you)\b/i;
 const EXPENSE = /\b(sent|paid|payment|purchase[d]?|debited|transferred|withdraw(n|al)?|cash[- ]?out|spent|charged|bought)\b/i;
-const REFERENCE = /\bref(?:erence)?\.?\s*(?:no\.?|number|#)?\s*:?\s*([A-Z0-9][A-Z0-9 -]{5,30}[A-Z0-9])/i;
+// "Ref. No. 1234 567 890123", "Reference #ABC123456": a code with a digit; later groups must start with a digit,
+// so the words after it ("has been processed") are left out. The \b after "ref" keeps "refund" out.
+const REFERENCE = /\bref(?:erence)?\b\.?\s*(?:no\.?|number|#)?\s*(?:is\s+)?:?\s*([A-Z]*\d[A-Z0-9]*(?:[ -]\d[A-Z0-9]*)*)/i;
 // "to JUAN DELA CRUZ", "from MA** S.", "at SM SUPERMARKET", stopping at the usual connectors.
 const COUNTERPARTY = /\b(to|from|at)\s+(?!your\b|you\b|the\s+account\b)([A-Za-z0-9*][A-Za-z0-9*.&'’ -]{1,40}?)(?=\s+(?:on|with|via|using|for|thru|through|ref|amount|was|is|has|have|had|successful|completed|\d{4}|0\d{9,})\b|[.,;:]|\s*$|\s+\d)/i;
 
@@ -64,11 +66,13 @@ export function parseTransaction(notification: CapturedNotification): ParsedTran
   if (!income && !expense) return null;
   // Promotions mention amounts too; only keep them when they read as a completed transaction.
   if (PROMO.test(text) && !/\b(you have|you've|your)\b/i.test(text)) return null;
-  const flow: ItemFlow = income && !expense ? 'income' : income && /\b(you (have )?received|credited to your)\b/i.test(text) ? 'income' : 'expense';
+  const flow: ItemFlow = income && !expense ? 'income' : income && /\b(you (have )?received|credited to your|sent you)\b/i.test(text) ? 'income' : 'expense';
 
   const provider = KNOWN_PROVIDERS[notification.packageName] ?? (notification.title.trim().split(/[:\-–|]/)[0].trim().slice(0, 30) || 'Payment');
   const counterparty = findCounterparty(text, flow);
-  const reference = text.match(REFERENCE)?.[1].replace(/\s+/g, ' ').trim() ?? null;
+  const code = text.match(REFERENCE)?.[1].replace(/\s+/g, ' ').trim();
+  // Short codes like "Ref 12" are too likely to repeat to identify a payment.
+  const reference = code && code.replace(/[\s-]/g, '').length >= 6 ? code : null;
   return {
     provider,
     flow,
