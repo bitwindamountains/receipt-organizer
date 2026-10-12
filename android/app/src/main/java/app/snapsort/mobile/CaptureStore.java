@@ -2,6 +2,7 @@ package app.snapsort.mobile;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,10 +46,19 @@ final class CaptureStore {
         prefs(context).edit().putString(KEY_QUEUE, trimmed.toString()).apply();
     }
 
-    static synchronized JSONArray takeAll(Context context) {
+    /** Reads the queue without clearing it; entries stay until {@link #remove} confirms they were filed. */
+    static synchronized JSONArray peek(Context context) {
+        return read(context);
+    }
+
+    static synchronized void remove(Context context, Set<String> ids) {
         JSONArray queue = read(context);
-        prefs(context).edit().putString(KEY_QUEUE, "[]").apply();
-        return queue;
+        JSONArray kept = new JSONArray();
+        for (int i = 0; i < queue.length(); i++) {
+            JSONObject entry = queue.optJSONObject(i);
+            if (entry != null && !ids.contains(entry.optString("id"))) kept.put(entry);
+        }
+        prefs(context).edit().putString(KEY_QUEUE, kept.toString()).apply();
     }
 
     private static JSONArray read(Context context) {

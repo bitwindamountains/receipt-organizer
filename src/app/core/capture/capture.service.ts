@@ -92,7 +92,7 @@ export class CaptureService {
       if (document.visibilityState === 'visible') void this.refresh();
     });
     if (this.native) {
-      void SnapSortCapture.addListener('notificationCaptured', (notification) => this.importNotifications([notification]));
+      void SnapSortCapture.addListener('notificationCaptured', (notification) => void this.importQueued([notification]));
       void SnapSortCapture.addListener('imagesShared', () => void this.collectShares());
     } else if (this.supportsFolder) {
       void this.restoreFolder();
@@ -104,8 +104,8 @@ export class CaptureService {
   async refresh(): Promise<void> {
     if (this.native) {
       this.status.set(await SnapSortCapture.getCaptureStatus().catch(() => this.status()));
-      const { notifications } = await SnapSortCapture.takeCapturedNotifications().catch(() => ({ notifications: [] as CapturedNotification[] }));
-      if (notifications.length) this.importNotifications(notifications);
+      const { notifications } = await SnapSortCapture.getCapturedNotifications().catch(() => ({ notifications: [] as CapturedNotification[] }));
+      if (notifications.length) void this.importQueued(notifications);
       await this.collectShares();
     }
     if (this.preferences.screenshotInbox()) void this.scanScreenshots();
@@ -135,40 +135,53 @@ export class CaptureService {
     return added && added !== before ? added : null;
   }
 
-  /** Parses, de-duplicates, and files captured notifications, one batch at a time. */
-  importNotifications(notifications: CapturedNotification[]): Promise<void> {
-    this.queue = this.queue.then(() => this.importBatch(notifications)).catch(() => undefined);
-    return this.queue;
+  /** Files notifications from the native queue, then removes only the ones handled, so a failed save is retried. */
+  private async importQueued(notifications: CapturedNotification[]): Promise<void> {
+    const handled = await this.importNotifications(notifications);
+    if (handled.size) await SnapSortCapture.ackCapturedNotifications({ ids: [...handled] }).catch(() => undefined);
   }
 
-  private async importBatch(notifications: CapturedNotification[]): Promise<void> {
+  /**
+   * Parses, de-duplicates, and files captured notifications, one batch at a time.
+   * Resolves with the ids that are done with: saved, duplicates, or not a payment.
+   */
+  importNotifications(notifications: CapturedNotification[]): Promise<Set<string>> {
+    const result = this.queue.then(() => this.importBatch(notifications)).catch(() => new Set<string>());
+    this.queue = result.then(() => undefined);
+    return result;
+  }
+
+  private async importBatch(notifications: CapturedNotification[]): Promise<Set<string>> {
     await this.store.load();
     const seen = readSet(CAPTURED_KEYS);
     const added: SavedItem[] = [];
+    const handled = new Set<string>();
     for (const notification of notifications) {
       const transaction = parseTransaction(notification);
-      if (!transaction) continue;
-      const key = transactionKey(transaction);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      if (transaction.reference && this.store.items().some((item) => item.notes?.includes(transaction.reference!))) continue;
+      const key = transaction && transactionKey(transaction);
+      if (!transaction || !key || seen.has(key) || (transaction.reference && this.store.items().some((item) => item.notes?.includes(transaction.reference!)))) {
+        handled.add(notification.id);
+        continue;
+      }
       try {
         added.push(await this.saveTransaction(transaction, notification));
+        seen.add(key);
+        handled.add(notification.id);
       } catch {
-        seen.delete(key);
+        // Not handled: it stays in the native queue and is tried again on the next open.
       }
     }
     writeSet(CAPTURED_KEYS, seen);
-    if (!added.length) return;
+    if (!added.length) return handled;
     this.recent.update((recent) => [...added, ...recent].slice(0, 6));
     const first = added[0];
     const amount = new Intl.NumberFormat(undefined, { style: 'currency', currency: first.currencyCode ?? 'PHP' }).format((first.amountMinor ?? 0) / 100);
-    const toast = await this.toasts.create({
-      message: added.length === 1 ? `Captured ${amount}: ${first.title}` : `Captured ${added.length} payments`,
-      duration: 2600,
-      icon: 'flash',
-    });
-    await toast.present();
+    // The toast is a courtesy; it must not keep saved payments from being acknowledged.
+    void this.toasts
+      .create({ message: added.length === 1 ? `Captured ${amount}: ${first.title}` : `Captured ${added.length} payments`, duration: 2600, icon: 'flash' })
+      .then((toast) => toast.present())
+      .catch(() => undefined);
+    return handled;
   }
 
   private async saveTransaction(transaction: ParsedTransaction, notification: CapturedNotification): Promise<SavedItem> {

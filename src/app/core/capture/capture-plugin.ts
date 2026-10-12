@@ -22,7 +22,9 @@ export interface SnapSortCapturePlugin {
   getCaptureStatus(): Promise<{ accessGranted: boolean; enabled: boolean }>;
   setCaptureEnabled(options: { enabled: boolean }): Promise<void>;
   openNotificationAccessSettings(): Promise<void>;
-  takeCapturedNotifications(): Promise<{ notifications: CapturedNotification[] }>;
+  /** Queued notifications, left in the queue until acknowledged. */
+  getCapturedNotifications(): Promise<{ notifications: CapturedNotification[] }>;
+  ackCapturedNotifications(options: { ids: string[] }): Promise<void>;
   getPhotosPermission(): Promise<{ state: PermissionState }>;
   requestPhotosPermission(): Promise<{ state: PermissionState }>;
   getRecentScreenshots(options: { since: number; limit?: number }): Promise<{ screenshots: DeviceScreenshot[] }>;

@@ -26,7 +26,9 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -109,8 +111,8 @@ public class SnapSortCapturePlugin extends Plugin {
     }
 
     @PluginMethod
-    public void takeCapturedNotifications(PluginCall call) {
-        JSONArray queued = CaptureStore.takeAll(getContext());
+    public void getCapturedNotifications(PluginCall call) {
+        JSONArray queued = CaptureStore.peek(getContext());
         try {
             JSObject result = new JSObject();
             result.put("notifications", new JSArray(queued.toString()));
@@ -118,6 +120,16 @@ public class SnapSortCapturePlugin extends Plugin {
         } catch (JSONException error) {
             call.reject("Could not read captured notifications.", error);
         }
+    }
+
+    /** Removes queued notifications the app has filed (or deliberately skipped). */
+    @PluginMethod
+    public void ackCapturedNotifications(PluginCall call) {
+        JSArray ids = call.getArray("ids", new JSArray());
+        Set<String> handled = new HashSet<>();
+        for (int i = 0; i < ids.length(); i++) handled.add(ids.optString(i));
+        CaptureStore.remove(getContext(), handled);
+        call.resolve();
     }
 
     // ---------- Screenshot inbox ----------
