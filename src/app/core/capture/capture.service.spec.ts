@@ -43,6 +43,31 @@ describe('CaptureService.scanScreenshots', () => {
   });
 });
 
+describe('CaptureService.eraseData', () => {
+  it('forgets inbox entries, scan position, and captured payment keys', async () => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+    localStorage.setItem('snapsort.inbox.v1', JSON.stringify([{ id: 'a', source: 'device', previewUrl: 'x', fileName: 'Screenshot.png', takenAt: 1, mimeType: 'image/png', suggestion: {}, flow: 'expense', duplicateOf: null }]));
+    localStorage.setItem('snapsort.inbox.since', '123');
+    localStorage.setItem('snapsort.inbox.seen', '["a"]');
+    localStorage.setItem('snapsort.capture.keys', '["GCash|ref|1234567890"]');
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ImageStorageService, useValue: { release: () => undefined } },
+        { provide: Router, useValue: {} },
+        { provide: ToastController, useValue: {} },
+      ],
+    });
+    const capture = TestBed.inject(CaptureService);
+    expect(capture.inbox()).toHaveLength(1);
+
+    await capture.eraseData();
+
+    expect(capture.inbox()).toEqual([]);
+    for (const key of ['snapsort.inbox.v1', 'snapsort.inbox.since', 'snapsort.inbox.seen', 'snapsort.capture.keys']) expect(localStorage.getItem(key)).toBeNull();
+  });
+});
+
 describe('CaptureService.importNotifications', () => {
   beforeEach(() => {
     localStorage.clear();

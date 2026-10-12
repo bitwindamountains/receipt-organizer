@@ -249,6 +249,23 @@ export class CaptureService {
     persistEntries([]);
   }
 
+  /** Part of "Erase all SnapSort data": drops captured payment texts, inbox entries, and what was already seen. */
+  async eraseData(): Promise<void> {
+    for (const entry of this.inbox()) if (entry.source === 'folder') this.images.release(entry.previewUrl);
+    this.inbox.set([]);
+    this.recent.set([]);
+    for (const key of [INBOX_ENTRIES, INBOX_SINCE, INBOX_SEEN, CAPTURED_KEYS]) {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Storage unavailable: nothing was saved either.
+      }
+    }
+    if (!this.native) return;
+    const { notifications } = await SnapSortCapture.getCapturedNotifications().catch(() => ({ notifications: [] as CapturedNotification[] }));
+    if (notifications.length) await SnapSortCapture.ackCapturedNotifications({ ids: notifications.map((notification) => notification.id) });
+  }
+
   async scanScreenshots(): Promise<void> {
     if (this.scanning()) return;
     this.scanning.set(true);

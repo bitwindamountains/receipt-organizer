@@ -31,6 +31,17 @@ export class BusinessProfileStore {
   recordNumber(number: string): void {
     write(NUMBER_KEY, number);
   }
+
+  /** Part of "Erase all SnapSort data". */
+  clear(): void {
+    try {
+      localStorage.removeItem(PROFILE_KEY);
+      localStorage.removeItem(NUMBER_KEY);
+    } catch {
+      // Storage unavailable: nothing was saved either.
+    }
+    this.profileState.set(readProfile());
+  }
 }
 
 function readProfile(): BusinessProfile {

@@ -22,6 +22,7 @@ import { ImageStorageService } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
 import { PreferencesStore } from '../../core/services/preferences.store';
 import { CaptureService } from '../../core/capture/capture.service';
+import { BusinessProfileStore } from '../../core/receipts/business-profile.store';
 
 @Component({
   selector: 'app-settings',
@@ -145,6 +146,7 @@ export class SettingsPage {
   protected readonly preferences = inject(PreferencesStore);
   protected readonly capture = inject(CaptureService);
   private readonly images = inject(ImageStorageService);
+  private readonly business = inject(BusinessProfileStore);
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
   protected readonly categoryName = signal('');
@@ -217,7 +219,7 @@ export class SettingsPage {
   async confirmErase(): Promise<void> {
     const alert = await this.alerts.create({
       header: 'Erase all SnapSort data?',
-      message: 'Every app-managed image, its details, and your custom categories will be permanently removed. Gallery originals are not affected.',
+      message: 'Every app-managed image and its details, your custom categories, captured payments waiting to be filed, the screenshot inbox, and your business details will be permanently removed. Gallery originals are not affected.',
       buttons: [{ text: 'Cancel', role: 'cancel' }, { text: 'Erase everything', role: 'destructive', handler: () => void this.eraseAll() }],
     });
     await alert.present();
@@ -228,6 +230,8 @@ export class SettingsPage {
     await this.store.clear();
     await Promise.all(items.map((item) => this.images.remove(item.imageKey)));
     this.categories.clear();
+    this.business.clear();
+    await this.capture.eraseData();
     const toast = await this.toasts.create({ message: 'SnapSort data erased', duration: 2200 });
     await toast.present();
   }
