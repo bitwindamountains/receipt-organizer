@@ -252,20 +252,24 @@ public class SnapSortCapturePlugin extends Plugin {
         // Handle each share once, even if the activity is recreated with the same intent.
         intent.setAction(null);
 
-        int copied = 0;
-        for (Uri uri : uris.subList(0, Math.min(uris.size(), 10))) {
-            JSObject image = copyToCache(uri);
-            if (image == null) continue;
-            synchronized (pendingShares) {
-                pendingShares.add(image);
+        // Copying can download from a cloud provider; off the UI thread so the app never freezes (ANR).
+        List<Uri> batch = new ArrayList<>(uris.subList(0, Math.min(uris.size(), 10)));
+        getBridge().execute(() -> {
+            int copied = 0;
+            for (Uri uri : batch) {
+                JSObject image = copyToCache(uri);
+                if (image == null) continue;
+                synchronized (pendingShares) {
+                    pendingShares.add(image);
+                }
+                copied++;
             }
-            copied++;
-        }
-        if (copied > 0) {
-            JSObject event = new JSObject();
-            event.put("count", copied);
-            notifyListeners("imagesShared", event, true);
-        }
+            if (copied > 0) {
+                JSObject event = new JSObject();
+                event.put("count", copied);
+                notifyListeners("imagesShared", event, true);
+            }
+        });
     }
 
     /**
