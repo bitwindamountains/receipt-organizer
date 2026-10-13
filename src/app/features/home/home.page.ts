@@ -12,10 +12,11 @@ import { daysLeftLabel, endingSoon } from '../../core/utils/warranty';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
 import { CountUpDirective } from '../../shared/count-up.directive';
 import { ItemCardComponent } from '../../shared/item-card/item-card.component';
+import { ThumbComponent } from '../../shared/thumb.component';
 
 @Component({
   selector: 'app-home',
-  imports: [DatePipe, IonContent, IonSearchbar, IonButton, IonIcon, RouterLink, ItemCardComponent, AmbientBackdropComponent, CountUpDirective],
+  imports: [DatePipe, IonContent, IonSearchbar, IonButton, IonIcon, RouterLink, ItemCardComponent, AmbientBackdropComponent, CountUpDirective, ThumbComponent],
   template: `
     <ion-content [fullscreen]="true">
       <app-ambient-backdrop class="home-ambient" />
@@ -26,8 +27,20 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
         </div>
 
         <section class="hero">
+          <!-- The latest slips fanned on the table, top right; the headline stays left. -->
+          @if (store.recent().length) {
+            <div class="hero-fan" aria-hidden="true">
+              @for (item of store.recent().slice(0, 3); track item.id; let i = $index) {
+                <app-thumb class="fan-slip" [imageKey]="item.imageKey" [style.--n]="i" />
+              }
+            </div>
+          }
           <p class="eyebrow reveal" style="--i: 1">{{ greeting() }}</p>
-          <h1 class="reveal" style="--i: 2">What do you need to find?</h1>
+          <h1 class="reveal" style="--i: 2">
+            Find anything
+            @if (store.recent()[0]; as latest) { <app-thumb class="inline-thumb" [imageKey]="latest.imageKey" /> }
+            you saved.
+          </h1>
           <ion-searchbar
             class="sn-search reveal"
             style="--i: 3"
@@ -62,8 +75,20 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
             <ion-button routerLink="/add" size="large">Add your first image</ion-button>
           </section>
         } @else {
-          <section class="stat-row" aria-label="Library overview">
-            <button class="stat-tile reveal" style="--i: 4" (click)="openLibrary()">
+          <!-- Gapless bento: slip spans the row (2x2 when wide), then 2 + 1 + 1. -->
+          <section class="bento" aria-label="Library overview">
+            @if (monthSummary(); as summary) {
+              <a class="month-slip" routerLink="/insights" [attr.aria-label]="summary.month + ' receipts total ' + summary.total + '. Open insights'">
+                <p class="slip-label">{{ summary.month }} receipts</p>
+                <span class="slip-total num">{{ summary.total }}</span>
+                <span class="slip-meta">
+                  {{ summary.count }} {{ summary.count === 1 ? 'receipt' : 'receipts' }}
+                  @if (summary.otherCurrencies) { <br />+{{ summary.otherCurrencies }} other {{ summary.otherCurrencies === 1 ? 'currency' : 'currencies' }} }
+                </span>
+                <span class="slip-cta">See insights <ion-icon name="arrow-forward" aria-hidden="true" /></span>
+              </a>
+            }
+            <button class="stat-tile stat-tile--wide reveal" style="--i: 4" (click)="openLibrary()">
               <span class="stat-icon"><ion-icon name="albums-outline" aria-hidden="true" /></span>
               <span><strong class="stat-value num" [appCountUp]="store.items().length"></strong><span class="stat-label">All items</span></span>
             </button>
@@ -76,18 +101,6 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
               <span><strong class="stat-value num" [appCountUp]="store.favorites().length"></strong><span class="stat-label">Favorites</span></span>
             </button>
           </section>
-
-          @if (monthSummary(); as summary) {
-            <a class="month-slip" routerLink="/insights" [attr.aria-label]="summary.month + ' receipts total ' + summary.total + '. Open insights'">
-              <p class="slip-label">{{ summary.month }} receipts</p>
-              <span class="slip-total num">{{ summary.total }}</span>
-              <span class="slip-meta">
-                {{ summary.count }} {{ summary.count === 1 ? 'receipt' : 'receipts' }}
-                @if (summary.otherCurrencies) { <br />+{{ summary.otherCurrencies }} other {{ summary.otherCurrencies === 1 ? 'currency' : 'currencies' }} }
-              </span>
-              <span class="slip-cta">See insights <ion-icon name="arrow-forward" aria-hidden="true" /></span>
-            </a>
-          }
 
           @if (capture.recent().length) {
             <section class="capture-card reveal" style="--i: 6" aria-labelledby="captured-title">
@@ -140,8 +153,8 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
               <p class="eyebrow">Heads up</p>
               <h2 id="ending-title">Warranties ending soon</h2>
               <div class="ending-list">
-                @for (entry of ending(); track entry.item.id) {
-                  <a class="ending-card" [routerLink]="['/item', entry.item.id]">
+                @for (entry of ending(); track entry.item.id; let i = $index) {
+                  <a class="ending-card" [style.--i]="i" [routerLink]="['/item', entry.item.id]">
                     <span class="ending-days" [class.is-urgent]="entry.daysLeft <= 7" aria-hidden="true">
                       @if (entry.daysLeft === 0) { <strong>Today</strong> } @else { <strong>{{ entry.daysLeft }}</strong><small>{{ entry.daysLeft === 1 ? 'day' : 'days' }}</small> }
                     </span>

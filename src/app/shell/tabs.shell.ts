@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   IonFab,
@@ -15,12 +15,16 @@ import { ItemStore } from '../core/services/item.store';
 import { ReminderService } from '../core/services/reminder.service';
 import { CaptureService } from '../core/capture/capture.service';
 
+const TABS = ['home', 'library', 'insights', 'settings'];
+
 @Component({
   selector: 'app-tabs-shell',
   imports: [IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonFab, IonFabButton, RouterLink],
   template: `
-    <ion-tabs>
+    <ion-tabs (ionTabsDidChange)="tab.set($event.tab)">
       <ion-tab-bar slot="bottom" class="dock">
+        <!-- One pill slides under the selected tab instead of each tab filling itself. -->
+        <span class="dock-pill" aria-hidden="true" [class.is-hidden]="tabIndex() < 0" [style.--tab]="tabIndex()"></span>
         <ion-tab-button tab="home" href="/home">
           <ion-icon name="home-outline" class="icon-idle" aria-hidden="true" />
           <ion-icon name="home" class="icon-active" aria-hidden="true" />
@@ -55,6 +59,8 @@ import { CaptureService } from '../core/capture/capture.service';
 export class TabsShell {
   private readonly store = inject(ItemStore);
   protected readonly isEmpty = computed(() => this.store.ready() && this.store.items().length === 0);
+  protected readonly tab = signal('');
+  protected readonly tabIndex = computed(() => TABS.indexOf(this.tab()));
 
   constructor() {
     // Starts keeping warranty reminders in sync with the library.

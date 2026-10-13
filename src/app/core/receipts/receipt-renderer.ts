@@ -7,13 +7,13 @@ const PAPER = '#fffdf6';
 const INK = '#17201e';
 const MUTED = '#6b7672';
 const RULE = '#c9cfcb';
-const SANS = "'Inter Variable', Inter, system-ui, sans-serif";
-const MONO = "ui-monospace, 'Roboto Mono', 'SF Mono', Menlo, Consolas, monospace";
+const SANS = "'Geist Variable', system-ui, sans-serif";
+const MONO = "'Geist Mono Variable', ui-monospace, 'Roboto Mono', 'SF Mono', Menlo, Consolas, monospace";
 const TOOTH = 7;
 
 /** Draws the receipt as a PNG matching the in-app preview. */
 export async function renderReceipt(draft: ReceiptDraft): Promise<Blob> {
-  await document.fonts?.load(`700 16px ${SANS}`).catch(() => undefined);
+  await Promise.all([document.fonts?.load(`700 16px ${SANS}`), document.fonts?.load(`600 13px ${MONO}`)]).catch(() => undefined);
   // First pass measures the height, second pass draws at that size.
   const height = paint(draft, measureContext());
   const canvas = document.createElement('canvas');

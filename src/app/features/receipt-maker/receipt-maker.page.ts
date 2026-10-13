@@ -67,7 +67,7 @@ function todayKey(): string {
               @if (payment()) { <div class="rp-row"><span>Paid via</span><strong>{{ payment() }}</strong></div> }
               <div class="rp-rule"></div>
               @for (line of previewLines(); track $index; let i = $index) {
-                <div class="rp-line" animate.enter="enter-fade">
+                <div class="rp-line" animate.enter="enter-print">
                   <span class="rp-desc">{{ line.description.trim() || 'Item' }}</span>
                   <span class="num">{{ money(totals().lineTotals[i]) }}</span>
                   <small class="num">{{ line.quantity }} × {{ money(toMinor(line.price)) }}</small>

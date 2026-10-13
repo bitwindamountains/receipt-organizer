@@ -42,11 +42,37 @@
   .enter-card { animation: sn-card-in 520ms var(--sn-ease-out) both; animation-delay: calc(min(var(--i, 0), 12) * 45ms); }
   .enter-fade { animation: sn-fade-up 360ms var(--sn-ease-out) both; }
   .enter-expand { animation: sn-expand 360ms var(--sn-ease-out) both; transform-origin: top; }
+  .enter-print { animation: sn-print 460ms var(--sn-ease-out) both; }
   .enter-pop { animation: sn-pop 420ms var(--sn-ease-spring) both; }
   .leave-fade { animation: sn-fade-out 200ms ease-in both; }
 
   .pressable { transition: transform var(--sn-dur-fast) var(--sn-ease-out); }
   .pressable:active { transform: scale(.97); }
+}
+
+// Scroll-linked motion (Chromium 115+ WebViews). Ranges use `entry`, so anything
+// already on screen at load is in its final state even if the page can't scroll.
+// Entry and exit animate different properties so the two never fight.
+@keyframes sn-card-rise { from { opacity: 0; translate: 0 28px; } }
+@keyframes sn-card-sink { to { scale: .95; filter: opacity(.3); } }
+@keyframes sn-scrub-word { from { opacity: .14; } }
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    // Slips grow in from below and dim as they leave the top.
+    .scroll-card {
+      animation: sn-card-rise var(--sn-ease-out) both, sn-card-sink linear both;
+      animation-timeline: view(), view();
+      animation-range: entry 0% entry 100%, exit 0% exit 100%;
+    }
+    // Words light up one by one as the sentence enters; set --p (0..1) per word.
+    .scrub { view-timeline: --scrub block; }
+    .scrub-word {
+      animation: sn-scrub-word linear both;
+      animation-timeline: --scrub;
+      animation-range: entry calc(var(--p, 0) * 50%) entry calc(var(--p, 0) * 50% + 50%);
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

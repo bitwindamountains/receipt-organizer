@@ -81,6 +81,12 @@ interface Column {
             }
           </section>
 
+          @if (story().length) {
+            <p class="spend-story scrub">
+              @for (word of story(); track $index) { <span class="scrub-word" [class.is-key]="word.key" [style.--p]="word.p">{{ word.text }}</span>{{ ' ' }} }
+            </p>
+          }
+
           <section class="chart-card reveal" style="--i: 4">
             <header class="chart-head">
               <div><h2>Monthly spending</h2><p>Six months to {{ monthName() }}</p></div>
@@ -207,6 +213,14 @@ export class InsightsPage {
   protected readonly hoveredColumn = computed(() => {
     const index = this.hovered();
     return index === null ? null : this.columns()[index] ?? null;
+  });
+  /** One plain sentence about the top category, split into words for the scroll reveal. */
+  protected readonly story = computed(() => {
+    const top = this.insights()?.categories[0];
+    if (!top) return [];
+    const name = top.name.split(' ');
+    const words = [...name, 'took', this.percent(top.share), 'of', 'everything', 'you', 'spent', 'in', `${this.monthName()}.`];
+    return words.map((text, i) => ({ text, key: i < name.length || i === name.length + 1, p: i / (words.length - 1) }));
   });
   protected readonly trendSummary = computed(() => `Monthly spending: ${(this.insights()?.trend ?? []).map((point) => `${point.label} ${this.money(point.amount)}`).join(', ')}`);
 

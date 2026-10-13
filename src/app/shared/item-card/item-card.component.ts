@@ -12,7 +12,7 @@ import { displayTitle, formatAmount } from '../../core/utils/item-display';
   selector: 'app-item-card',
   imports: [RouterLink, IonIcon, DatePipe],
   template: `
-    <a class="item-card" [routerLink]="['/item', item().id]">
+    <a class="item-card scroll-card" [routerLink]="['/item', item().id]">
       <div class="thumb" [class.is-loaded]="loaded()">
         <span class="thumb-skeleton" aria-hidden="true"></span>
         @if (imageUrl()) {

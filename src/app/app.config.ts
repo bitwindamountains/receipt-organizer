@@ -4,8 +4,9 @@ import { RouteReuseStrategy, provideRouter } from '@angular/router';
 import { AngularDelegate, ConfigToken, IonicRouteStrategy, provideComponentInputBinding } from '@ionic/angular/common';
 import { initialize } from '@ionic/core/components';
 import { routes } from './app.routes';
+import { pageTransition } from './shell/page-transition';
 
-const ionicConfig = { mode: 'md' as const };
+const ionicConfig = { mode: 'md' as const, navAnimation: pageTransition };
 
 /**
  * Same as Ionic's `provideIonicAngular`, minus ModalController/PopoverController
