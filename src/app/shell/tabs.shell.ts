@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   IonFab,
@@ -10,15 +10,21 @@ import {
   IonTabs,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, home, homeOutline, images, imagesOutline, settings, settingsOutline } from 'ionicons/icons';
+import { add, flash, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline } from 'ionicons/icons';
 import { ItemStore } from '../core/services/item.store';
+import { ReminderService } from '../core/services/reminder.service';
+import { CaptureService } from '../core/capture/capture.service';
+
+const TABS = ['home', 'library', 'insights', 'settings'];
 
 @Component({
   selector: 'app-tabs-shell',
   imports: [IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonFab, IonFabButton, RouterLink],
   template: `
-    <ion-tabs>
+    <ion-tabs (ionTabsDidChange)="tab.set($event.tab)">
       <ion-tab-bar slot="bottom" class="dock">
+        <!-- One pill slides under the selected tab instead of each tab filling itself. -->
+        <span class="dock-pill" aria-hidden="true" [class.is-hidden]="tabIndex() < 0" [style.--tab]="tabIndex()"></span>
         <ion-tab-button tab="home" href="/home">
           <ion-icon name="home-outline" class="icon-idle" aria-hidden="true" />
           <ion-icon name="home" class="icon-active" aria-hidden="true" />
@@ -28,6 +34,11 @@ import { ItemStore } from '../core/services/item.store';
           <ion-icon name="images-outline" class="icon-idle" aria-hidden="true" />
           <ion-icon name="images" class="icon-active" aria-hidden="true" />
           <ion-label>Library</ion-label>
+        </ion-tab-button>
+        <ion-tab-button tab="insights" href="/insights">
+          <ion-icon name="stats-chart-outline" class="icon-idle" aria-hidden="true" />
+          <ion-icon name="stats-chart" class="icon-active" aria-hidden="true" />
+          <ion-label>Insights</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="settings" href="/settings">
           <ion-icon name="settings-outline" class="icon-idle" aria-hidden="true" />
@@ -48,8 +59,14 @@ import { ItemStore } from '../core/services/item.store';
 export class TabsShell {
   private readonly store = inject(ItemStore);
   protected readonly isEmpty = computed(() => this.store.ready() && this.store.items().length === 0);
+  protected readonly tab = signal('');
+  protected readonly tabIndex = computed(() => TABS.indexOf(this.tab()));
 
   constructor() {
-    addIcons({ add, home, homeOutline, images, imagesOutline, settings, settingsOutline });
+    // Starts keeping warranty reminders in sync with the library.
+    inject(ReminderService);
+    // Imports captured payments, screenshots, and shared images.
+    inject(CaptureService).start();
+    addIcons({ add, flash, home, homeOutline, images, imagesOutline, settings, settingsOutline, statsChart, statsChartOutline });
   }
 }

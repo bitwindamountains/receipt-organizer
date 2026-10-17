@@ -1,17 +1,22 @@
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonIcon, IonSearchbar } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { albumsOutline, arrowForward, layers, receiptOutline, starOutline } from 'ionicons/icons';
+import { albumsOutline, arrowForward, chevronForward, flash, layers, receiptOutline, starOutline } from 'ionicons/icons';
 import { ItemStore } from '../../core/services/item.store';
-import { monthlyReceiptSummary } from '../../core/utils/item-display';
+import { CaptureService } from '../../core/capture/capture.service';
+import { SavedItem } from '../../core/models/saved-item';
+import { displayTitle, monthlyReceiptSummary } from '../../core/utils/item-display';
+import { daysLeftLabel, endingSoon } from '../../core/utils/warranty';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
 import { CountUpDirective } from '../../shared/count-up.directive';
 import { ItemCardComponent } from '../../shared/item-card/item-card.component';
+import { ThumbComponent } from '../../shared/thumb.component';
 
 @Component({
   selector: 'app-home',
-  imports: [IonContent, IonSearchbar, IonButton, IonIcon, RouterLink, ItemCardComponent, AmbientBackdropComponent, CountUpDirective],
+  imports: [DatePipe, IonContent, IonSearchbar, IonButton, IonIcon, RouterLink, ItemCardComponent, AmbientBackdropComponent, CountUpDirective, ThumbComponent],
   template: `
     <ion-content [fullscreen]="true">
       <app-ambient-backdrop class="home-ambient" />
@@ -22,8 +27,20 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
         </div>
 
         <section class="hero">
+          <!-- The latest slips fanned on the table, top right; the headline stays left. -->
+          @if (store.recent().length) {
+            <div class="hero-fan" aria-hidden="true">
+              @for (item of store.recent().slice(0, 3); track item.id; let i = $index) {
+                <app-thumb class="fan-slip" [imageKey]="item.imageKey" [style.--n]="i" />
+              }
+            </div>
+          }
           <p class="eyebrow reveal" style="--i: 1">{{ greeting() }}</p>
-          <h1 class="reveal" style="--i: 2">What do you need to find?</h1>
+          <h1 class="reveal" style="--i: 2">
+            Find anything
+            @if (store.recent()[0]; as latest) { <app-thumb class="inline-thumb" [imageKey]="latest.imageKey" /> }
+            you saved.
+          </h1>
           <ion-searchbar
             class="sn-search reveal"
             style="--i: 3"
@@ -58,8 +75,20 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
             <ion-button routerLink="/add" size="large">Add your first image</ion-button>
           </section>
         } @else {
-          <section class="stat-row" aria-label="Library overview">
-            <button class="stat-tile reveal" style="--i: 4" (click)="openLibrary()">
+          <!-- Gapless bento: slip spans the row (2x2 when wide), then 2 + 1 + 1. -->
+          <section class="bento" aria-label="Library overview">
+            @if (monthSummary(); as summary) {
+              <a class="month-slip" routerLink="/insights" [attr.aria-label]="summary.month + ' receipts total ' + summary.total + '. Open insights'">
+                <p class="slip-label">{{ summary.month }} receipts</p>
+                <span class="slip-total num">{{ summary.total }}</span>
+                <span class="slip-meta">
+                  {{ summary.count }} {{ summary.count === 1 ? 'receipt' : 'receipts' }}
+                  @if (summary.otherCurrencies) { <br />+{{ summary.otherCurrencies }} other {{ summary.otherCurrencies === 1 ? 'currency' : 'currencies' }} }
+                </span>
+                <span class="slip-cta">See insights <ion-icon name="arrow-forward" aria-hidden="true" /></span>
+              </a>
+            }
+            <button class="stat-tile stat-tile--wide reveal" style="--i: 4" (click)="openLibrary()">
               <span class="stat-icon"><ion-icon name="albums-outline" aria-hidden="true" /></span>
               <span><strong class="stat-value num" [appCountUp]="store.items().length"></strong><span class="stat-label">All items</span></span>
             </button>
@@ -73,15 +102,68 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
             </button>
           </section>
 
-          @if (monthSummary(); as summary) {
-            <button class="month-slip" (click)="openLibrary('receipt')">
-              <p class="slip-label">{{ summary.month }} receipts</p>
-              <span class="slip-total num">{{ summary.total }}</span>
-              <span class="slip-meta">
-                {{ summary.count }} {{ summary.count === 1 ? 'receipt' : 'receipts' }}
-                @if (summary.otherCurrencies) { <br />+{{ summary.otherCurrencies }} other {{ summary.otherCurrencies === 1 ? 'currency' : 'currencies' }} }
-              </span>
-            </button>
+          @if (capture.recent().length) {
+            <section class="capture-card reveal" style="--i: 6" aria-labelledby="captured-title">
+              <header>
+                <span class="capture-icon" aria-hidden="true"><ion-icon name="flash" /></span>
+                <div><h2 id="captured-title">Auto-captured</h2><p>From your payment notifications</p></div>
+                <a class="capture-link" routerLink="/library" [queryParams]="{ q: 'auto-captured' }">See all</a>
+              </header>
+              <ul>
+                @for (item of capture.recent(); track item.id) {
+                  <li animate.enter="enter-expand">
+                    <a [routerLink]="['/item', item.id]">
+                      <span class="capture-provider">{{ (item.tags[1] || 'pay').slice(0, 2) }}</span>
+                      <span class="capture-copy"><strong>{{ item.title }}</strong><small>{{ item.category }} · {{ item.createdAt | date: 'h:mm a' }}</small></span>
+                      <strong class="num" [class.is-income]="item.flow === 'income'">{{ item.flow === 'income' ? '+' : '−' }}{{ money(item) }}</strong>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          @if (capture.inbox().length || capture.folderNeedsPermission()) {
+            <section class="inbox-teaser reveal" style="--i: 6">
+              @if (capture.inbox().length) {
+                <a class="inbox-teaser-link" routerLink="/inbox">
+                  <span class="inbox-stack" aria-hidden="true">
+                    @for (entry of capture.inbox().slice(0, 3); track entry.id) {
+                      <span class="inbox-stack-shot">@if (entry.previewUrl) { <img [src]="entry.previewUrl" alt="" /> }</span>
+                    }
+                  </span>
+                  <span class="inbox-teaser-copy">
+                    <strong>{{ capture.inbox().length }} payment {{ capture.inbox().length === 1 ? 'screenshot' : 'screenshots' }} found</strong>
+                    <small>Tap to review and add them</small>
+                  </span>
+                  <ion-icon name="chevron-forward" aria-hidden="true" />
+                </a>
+              } @else {
+                <button type="button" class="inbox-teaser-link" (click)="capture.reconnectFolder()">
+                  <span class="capture-icon" aria-hidden="true"><ion-icon name="albums-outline" /></span>
+                  <span class="inbox-teaser-copy"><strong>Check for new screenshots</strong><small>Allow access to “{{ capture.folderName() }}” again</small></span>
+                  <ion-icon name="chevron-forward" aria-hidden="true" />
+                </button>
+              }
+            </section>
+          }
+
+          @if (ending().length) {
+            <section class="ending-soon reveal" style="--i: 7" aria-labelledby="ending-title">
+              <p class="eyebrow">Heads up</p>
+              <h2 id="ending-title">Warranties ending soon</h2>
+              <div class="ending-list">
+                @for (entry of ending(); track entry.item.id; let i = $index) {
+                  <a class="ending-card" [style.--i]="i" [routerLink]="['/item', entry.item.id]">
+                    <span class="ending-days" [class.is-urgent]="entry.daysLeft <= 7" aria-hidden="true">
+                      @if (entry.daysLeft === 0) { <strong>Today</strong> } @else { <strong>{{ entry.daysLeft }}</strong><small>{{ entry.daysLeft === 1 ? 'day' : 'days' }}</small> }
+                    </span>
+                    <span class="ending-copy"><strong>{{ title(entry.item) }}</strong><small>{{ daysLeftLabel(entry.daysLeft) }} · {{ entry.item.warrantyUntil | date: 'MMM d' }}</small></span>
+                    <ion-icon name="chevron-forward" aria-hidden="true" />
+                  </a>
+                }
+              </div>
+            </section>
           }
 
           <section class="quick-categories reveal" style="--i: 7">
@@ -111,10 +193,14 @@ import { ItemCardComponent } from '../../shared/item-card/item-card.component';
 })
 export class HomePage implements OnInit {
   protected readonly store = inject(ItemStore);
+  protected readonly capture = inject(CaptureService);
   private readonly router = inject(Router);
   protected readonly query = signal('');
   protected readonly receiptCount = computed(() => this.store.items().filter((item) => item.type === 'receipt').length);
   protected readonly monthSummary = computed(() => monthlyReceiptSummary(this.store.items()));
+  protected readonly ending = computed(() => endingSoon(this.store.items()).slice(0, 4));
+  protected readonly title = displayTitle;
+  protected readonly daysLeftLabel = daysLeftLabel;
   protected readonly popularCategories = computed(() => {
     const counts = new Map<string, number>();
     for (const item of this.store.items()) counts.set(item.category, (counts.get(item.category) ?? 0) + 1);
@@ -122,11 +208,15 @@ export class HomePage implements OnInit {
   });
 
   constructor() {
-    addIcons({ albumsOutline, arrowForward, layers, receiptOutline, starOutline });
+    addIcons({ albumsOutline, arrowForward, chevronForward, flash, layers, receiptOutline, starOutline });
   }
 
   ngOnInit(): void {
     void this.store.load();
+  }
+
+  protected money(item: SavedItem): string {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: item.currencyCode ?? 'PHP' }).format((item.amountMinor ?? 0) / 100);
   }
 
   protected greeting(): string {

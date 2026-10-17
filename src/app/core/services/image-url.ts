@@ -1,12 +1,12 @@
 import { DestroyRef, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
-import { ImageStorageService } from './image-storage.service';
+import { ImageStorageService, ImageVariant } from './image-storage.service';
 
 /**
  * Resolves a stored image key to a displayable URL. Stale lookups (an older key
  * resolving after a newer one, or after destroy) are discarded, and browser blob
  * URLs are released when replaced or destroyed. Call in an injection context.
  */
-export function injectImageUrl(key: () => string | null | undefined): Signal<string> {
+export function injectImageUrl(key: () => string | null | undefined, variant: ImageVariant = 'full'): Signal<string> {
   const images = inject(ImageStorageService);
   const currentKey = computed(key);
   const url = signal('');
@@ -26,7 +26,7 @@ export function injectImageUrl(key: () => string | null | undefined): Signal<str
       show('');
       return;
     }
-    images.urlFor(imageKey).then(
+    images.urlFor(imageKey, variant).then(
       (next) => (destroyed || id !== request ? images.release(next) : show(next)),
       () => !destroyed && id === request && show(''),
     );

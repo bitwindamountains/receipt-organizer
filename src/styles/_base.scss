@@ -1,7 +1,6 @@
 html { background: var(--ion-background-color); -webkit-tap-highlight-color: transparent; }
 body {
   margin: 0;
-  font-feature-settings: 'cv11', 'ss03';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -16,16 +15,26 @@ h2 { font-size: 1.32rem; }
   outline-offset: 3px;
 }
 
-.num { font-variant-numeric: tabular-nums; }
+.num { font-family: var(--sn-font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .visually-hidden {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap;
 }
 
-ion-content { --background: var(--ion-background-color); }
+ion-content { --background: var(--sn-mesh); }
 ion-toolbar { --background: var(--ion-toolbar-background); --border-color: transparent; }
+// Frosted headers: the page's mesh and grain scroll through instead of a flat band.
+ion-header:not(.detail-header) {
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+}
+ion-header:not(.detail-header) ion-toolbar { --background: rgba(var(--ion-background-color-rgb), .7); }
 ion-title { font-weight: 780; letter-spacing: -.02em; }
 ion-button { --border-radius: 14px; text-transform: none; letter-spacing: 0; font-weight: 700; }
+// Material back buttons default to all caps ("CANCEL"); the app's controls are sentence case.
+ion-back-button { text-transform: none; letter-spacing: 0; }
+// Toggle labels hold a title and a description; Ionic clips them to one line.
+ion-toggle::part(label) { white-space: normal; overflow: visible; }
 ion-button[fill='solid']:not([color]), ion-button:not([fill]):not([color]) { --box-shadow: var(--sn-shadow-primary); }
 ion-toast { --border-radius: 16px; --box-shadow: var(--sn-shadow-3); --start: 16px; --end: 16px; font-weight: 600; }
 ion-alert .alert-wrapper { border-radius: var(--sn-radius-lg) !important; }

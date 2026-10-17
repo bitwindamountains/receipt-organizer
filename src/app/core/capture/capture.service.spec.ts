@@ -1,0 +1,94 @@
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
+import { ToastController } from '@ionic/angular';
+import { SavedItem } from '../models/saved-item';
+import { TextRecognitionService } from '../ocr/text-recognition.service';
+import { ImageStorageService } from '../services/image-storage.service';
+import { ItemStore } from '../services/item.store';
+import { CaptureService } from './capture.service';
+import { CapturedNotification } from './transaction-parser';
+
+const note = (id: string, text: string): CapturedNotification => ({ id, packageName: 'com.globe.gcash.android', title: 'GCash', text, postedAt: Date.now() });
+
+describe('CaptureService.scanScreenshots', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+    URL.createObjectURL ??= () => 'blob:test';
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ItemStore, useValue: { items: signal([]), load: () => Promise.resolve() } },
+        { provide: ImageStorageService, useValue: { release: () => undefined } },
+        { provide: Router, useValue: {} },
+        { provide: ToastController, useValue: {} },
+      ],
+    });
+  });
+
+  it('reads every new screenshot even when more than one scan page arrived', async () => {
+    const files = Array.from({ length: 25 }, (_, i) => new File(['x'], `Screenshot_${i}.png`, { type: 'image/png', lastModified: 1_000_000 + i * 1000 }));
+    const read: string[] = [];
+    TestBed.overrideProvider(TextRecognitionService, { useValue: { read: (image: { sourceUrl: string }) => (read.push(image.sourceUrl), Promise.resolve('')) } });
+    const capture = TestBed.inject(CaptureService);
+    Object.assign(capture, {
+      native: false,
+      folder: { values: async function* () { for (const file of files) yield { kind: 'file', name: file.name, getFile: async () => file }; } },
+    });
+    localStorage.setItem('snapsort.inbox.since', '0');
+
+    await capture.scanScreenshots();
+
+    expect(read).toHaveLength(25);
+  });
+});
+
+describe('CaptureService.eraseData', () => {
+  it('forgets inbox entries, scan position, and captured payment keys', async () => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+    localStorage.setItem('snapsort.inbox.v1', JSON.stringify([{ id: 'a', source: 'device', previewUrl: 'x', fileName: 'Screenshot.png', takenAt: 1, mimeType: 'image/png', suggestion: {}, flow: 'expense', duplicateOf: null }]));
+    localStorage.setItem('snapsort.inbox.since', '123');
+    localStorage.setItem('snapsort.inbox.seen', '["a"]');
+    localStorage.setItem('snapsort.capture.keys', '["GCash|ref|1234567890"]');
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ImageStorageService, useValue: { release: () => undefined } },
+        { provide: Router, useValue: {} },
+        { provide: ToastController, useValue: {} },
+      ],
+    });
+    const capture = TestBed.inject(CaptureService);
+    expect(capture.inbox()).toHaveLength(1);
+
+    await capture.eraseData();
+
+    expect(capture.inbox()).toEqual([]);
+    for (const key of ['snapsort.inbox.v1', 'snapsort.inbox.since', 'snapsort.inbox.seen', 'snapsort.capture.keys']) expect(localStorage.getItem(key)).toBeNull();
+  });
+});
+
+describe('CaptureService.importNotifications', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+    const existing = { id: 'old', notes: 'Ref. 1111111111' } as SavedItem;
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ItemStore, useValue: { items: signal([existing]), load: () => Promise.resolve(), create: () => Promise.reject(new Error('disk full')) } },
+        { provide: Router, useValue: {} },
+        { provide: ToastController, useValue: {} },
+      ],
+    });
+  });
+
+  it('reports saved, duplicate, and non-payment notifications as handled, but not failed saves', async () => {
+    const capture = TestBed.inject(CaptureService);
+    const handled = await capture.importNotifications([
+      note('duplicate', 'You have paid PHP 100.00 to MERALCO. Ref. No. 1111111111.'),
+      note('promo', 'Get ₱50 cashback when you pay bills this weekend!'),
+      note('failed', 'You have paid PHP 200.00 to PLDT. Ref. No. 2222222222.'),
+    ]);
+    expect([...handled].sort()).toEqual(['duplicate', 'promo']);
+  });
+});

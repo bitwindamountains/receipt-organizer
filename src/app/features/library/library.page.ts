@@ -20,7 +20,7 @@ import { closeCircle, star, starOutline } from 'ionicons/icons';
 import { ItemType, SavedItem } from '../../core/models/saved-item';
 import { CategoryStore } from '../../core/services/category.store';
 import { ItemStore } from '../../core/services/item.store';
-import { displayTitle, matchesQuery } from '../../core/utils/item-display';
+import { MonthGroup, displayTitle, groupByMonth, matchesQuery } from '../../core/utils/item-display';
 import { ItemCardComponent } from '../../shared/item-card/item-card.component';
 
 type SortOrder = 'newest' | 'oldest' | 'title';
@@ -62,11 +62,24 @@ type SortOrder = 'newest' | 'oldest' | 'title';
         </div>
 
         @if (results().length) {
-          <section class="item-grid">
-            @for (item of results(); track item.id; let i = $index) {
-              <app-item-card [item]="item" animate.enter="enter-card" [style.--i]="i" />
-            }
-          </section>
+          @for (group of groups(); track group.key) {
+            <section class="month-group" [attr.aria-label]="group.label || 'Results'">
+              @if (group.label) {
+                <header class="month-header">
+                  <h2>{{ group.label }}</h2>
+                  <span class="num">
+                    {{ group.items.length }} {{ group.items.length === 1 ? 'item' : 'items' }}
+                    @if (group.receipts; as receipts) { · {{ receipts.total }}@if (receipts.otherCurrencies) {+} }
+                  </span>
+                </header>
+              }
+              <div class="item-grid">
+                @for (item of group.items; track item.id; let i = $index) {
+                  <app-item-card [item]="item" animate.enter="enter-card" [style.--i]="i" />
+                }
+              </div>
+            </section>
+          }
         } @else if (store.ready()) {
           <section class="empty-state" animate.enter="enter-fade">
             <div class="empty-art" aria-hidden="true">
@@ -99,6 +112,10 @@ export class LibraryPage implements OnInit {
     (this.category() === 'all' || item.category === this.category()) &&
     (!this.favoriteOnly() || item.isFavorite) && matchesQuery(item, this.query()),
   )));
+  /** Date sorts are split into months; title sort is one unlabeled group. */
+  protected readonly groups = computed<MonthGroup[]>(() => this.sort() === 'title'
+    ? [{ key: 'all', label: '', items: this.results(), receipts: null }]
+    : groupByMonth(this.results()));
 
   constructor() {
     addIcons({ closeCircle, star, starOutline });

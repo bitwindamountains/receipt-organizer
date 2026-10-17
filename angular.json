@@ -31,7 +31,8 @@
               }
             ],
             "styles": [
-              "node_modules/@fontsource-variable/inter/opsz.css",
+              "node_modules/@fontsource-variable/geist/wght.css",
+              "node_modules/@fontsource-variable/geist-mono/wght.css",
               "node_modules/@ionic/angular/css/core.css",
               "node_modules/@ionic/angular/css/normalize.css",
               "node_modules/@ionic/angular/css/structure.css",
@@ -41,6 +42,10 @@
               "node_modules/@ionic/angular/css/flex-utils.css",
               "node_modules/@ionic/angular/css/palettes/dark.system.css",
               "src/styles.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "tesseract.js",
+              "regenerator-runtime"
             ]
           },
           "configurations": {
@@ -62,7 +67,51 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public"
+                },
+                {
+                  "glob": "worker.min.js",
+                  "input": "node_modules/tesseract.js/dist",
+                  "output": "ocr"
+                },
+                {
+                  "glob": "tesseract-core-*lstm.wasm.js",
+                  "input": "node_modules/tesseract.js-core",
+                  "output": "ocr"
+                },
+                {
+                  "glob": "eng.traineddata.gz",
+                  "input": "node_modules/@tesseract.js-data/eng/4.0.0_best_int",
+                  "output": "ocr"
+                }
+              ]
+            },
+            "web": {
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public"
+                },
+                {
+                  "glob": "worker.min.js",
+                  "input": "node_modules/tesseract.js/dist",
+                  "output": "ocr"
+                },
+                {
+                  "glob": "tesseract-core-*lstm.wasm.js",
+                  "input": "node_modules/tesseract.js-core",
+                  "output": "ocr"
+                },
+                {
+                  "glob": "eng.traineddata.gz",
+                  "input": "node_modules/@tesseract.js-data/eng/4.0.0_best_int",
+                  "output": "ocr"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"

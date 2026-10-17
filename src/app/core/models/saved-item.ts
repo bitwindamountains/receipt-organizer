@@ -1,4 +1,6 @@
 export type ItemType = 'screenshot' | 'receipt';
+/** `expense`: something you paid for. `income`: a receipt you issued to a customer. */
+export type ItemFlow = 'expense' | 'income';
 
 export interface SavedItem {
   id: string;
@@ -14,6 +16,9 @@ export interface SavedItem {
   currencyCode: string | null;
   purchaseDate: string | null;
   isFavorite: boolean;
+  flow: ItemFlow;
+  /** Warranty or return deadline (YYYY-MM-DD) for reminders. */
+  warrantyUntil: string | null;
   createdAt: string;
   updatedAt: string;
 }

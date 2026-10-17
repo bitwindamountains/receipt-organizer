@@ -15,13 +15,14 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { close, createOutline, expandOutline, shareOutline, trashOutline, star, starOutline } from 'ionicons/icons';
+import { close, createOutline, expandOutline, shareOutline, shieldCheckmark, shieldOutline, trashOutline, star, starOutline } from 'ionicons/icons';
 import { map } from 'rxjs';
 import { SavedItem } from '../../core/models/saved-item';
 import { ImageStorageService } from '../../core/services/image-storage.service';
 import { injectImageUrl } from '../../core/services/image-url';
 import { ItemStore } from '../../core/services/item.store';
 import { displayTitle, formatAmount } from '../../core/utils/item-display';
+import { daysLeftLabel, warrantyStatus } from '../../core/utils/warranty';
 import { injectGoBack } from '../../core/utils/navigation';
 
 const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
@@ -68,11 +69,24 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
               <section class="detail-slip reveal" style="--i: 2" aria-label="Receipt summary">
                 <div class="slip-head">
                   <span>{{ current.merchant || 'Receipt' }}</span>
-                  @if (current.purchaseDate) { <span>{{ current.purchaseDate | date: 'mediumDate':'UTC' }}</span> }
+                  @if (current.purchaseDate) { <span>{{ current.purchaseDate | date: 'mediumDate' }}</span> }
                 </div>
                 @if (formatAmount(current); as amount) {
                   <div class="slip-amount"><span>Total</span><strong class="num">{{ amount }}</strong></div>
                 }
+              </section>
+            }
+
+            @if (warranty(); as w) {
+              <section class="warranty-card reveal" style="--i: 3" [class.is-ending]="w.state === 'ending'" [class.is-ended]="w.state === 'ended'">
+                <span class="warranty-ring" aria-hidden="true">
+                  <svg viewBox="0 0 44 44"><circle class="ring-track" cx="22" cy="22" r="18" /><circle class="ring-fill" cx="22" cy="22" r="18" [style.--p]="w.remaining ?? (w.state === 'ended' ? 0 : 1)" /></svg>
+                  <ion-icon [name]="w.state === 'ended' ? 'shield-outline' : 'shield-checkmark'" />
+                </span>
+                <div class="warranty-copy">
+                  <strong>{{ w.state === 'ended' ? 'Warranty ended' : w.state === 'ending' ? 'Warranty ending soon' : 'Under warranty' }}</strong>
+                  <span>{{ daysLeftLabel(w.daysLeft) }} · until {{ current.warrantyUntil | date: 'mediumDate' }}</span>
+                </div>
               </section>
             }
 
@@ -82,7 +96,7 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
               }
               @if (current.notes) { <div><dt>Notes</dt><dd class="notes">{{ current.notes }}</dd></div> }
               <div><dt>Category</dt><dd>{{ current.category }}</dd></div>
-              <div><dt>Saved</dt><dd>{{ current.createdAt | date: 'medium' }}</dd></div>
+              <div><dt>Saved</dt><dd>{{ current.createdAt | date: 'MMM d, y, h:mm a' }}</dd></div>
             </dl>
 
             <div class="detail-actions reveal" style="--i: 4">
@@ -133,6 +147,11 @@ export class ItemDetailsPage implements OnInit {
   // Derived from the store so edits, favorites, and undo show up immediately.
   protected readonly item = computed(() => this.store.items().find((candidate) => candidate.id === this.id()) ?? this.deleted());
   protected readonly imageUrl = injectImageUrl(() => this.item()?.imageKey);
+  protected readonly warranty = computed(() => {
+    const item = this.item();
+    return item ? warrantyStatus(item) : null;
+  });
+  protected readonly daysLeftLabel = daysLeftLabel;
   protected readonly viewerOpen = signal(false);
   protected readonly zoomed = signal(false);
   protected readonly burst = signal(false);
@@ -144,7 +163,7 @@ export class ItemDetailsPage implements OnInit {
   private burstTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
-    addIcons({ close, createOutline, expandOutline, shareOutline, trashOutline, star, starOutline });
+    addIcons({ close, createOutline, expandOutline, shareOutline, shieldCheckmark, shieldOutline, trashOutline, star, starOutline });
   }
 
   ngOnInit(): void {

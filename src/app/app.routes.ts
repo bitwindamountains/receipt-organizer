@@ -27,6 +27,11 @@ export const routes: Routes = [
           import('./features/library/library.page').then((m) => m.LibraryPage),
       },
       {
+        path: 'insights',
+        loadComponent: () =>
+          import('./features/insights/insights.page').then((m) => m.InsightsPage),
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('./features/settings/settings.page').then((m) => m.SettingsPage),
@@ -38,6 +43,17 @@ export const routes: Routes = [
     path: 'add',
     canActivate: [requiresOnboarding],
     loadComponent: () => import('./features/add-item/add-item.page').then((m) => m.AddItemPage),
+  },
+  {
+    path: 'receipt/new',
+    canActivate: [requiresOnboarding],
+    loadComponent: () =>
+      import('./features/receipt-maker/receipt-maker.page').then((m) => m.ReceiptMakerPage),
+  },
+  {
+    path: 'inbox',
+    canActivate: [requiresOnboarding],
+    loadComponent: () => import('./features/inbox/inbox.page').then((m) => m.InboxPage),
   },
   {
     path: 'item/:id',
