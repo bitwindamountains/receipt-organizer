@@ -35,7 +35,8 @@ const CURRENCY_HINTS: [RegExp, string][] = [
   [/\busd\b|us\$|\$/i, 'USD'],
 ];
 
-const MONEY = /(?:₱|php|p|\$|usd|€|eur|£|¥)?\s*(\d{1,3}(?:[,\s]\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2}))(?!\d)/gi;
+// Only a comma separates thousands: "TOTAL 3 450.00" is a quantity of 3 and 450.00, not 3,450.
+const MONEY = /(?:₱|php|p|\$|usd|€|eur|£|¥)?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2}))(?!\d)/gi;
 
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 

@@ -54,7 +54,7 @@ export class ItemStore {
   }
 
   async clear(): Promise<void> {
-    for (const item of [...this.state()]) await this.database.delete(item.id);
+    await this.database.clear();
     this.state.set([]);
   }
 

@@ -77,6 +77,11 @@ describe('receipt parser', () => {
     expect(findTotal(['Item A 12.00', 'Item B 30.50'])).toBe(30.5);
   });
 
+  it('does not join a quantity to the amount after it', () => {
+    expect(findTotal(['TOTAL 3 450.00'])).toBe(450);
+    expect(findTotal(['Amount Paid 12 100.00'])).toBe(100);
+  });
+
   it('skips address and header lines when finding the merchant', () => {
     expect(findMerchant(['OFFICIAL RECEIPT', '123 Rizal St.', 'SM SUPERMARKET', 'Item 10.00'])).toBe('SM Supermarket');
   });

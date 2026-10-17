@@ -264,20 +264,23 @@ export class SettingsPage {
   async confirmErase(): Promise<void> {
     const alert = await this.alerts.create({
       header: 'Erase all SnapSort data?',
-      message: 'Every app-managed image and its details, your custom categories, captured payments waiting to be filed, the screenshot inbox, and your business details will be permanently removed. Gallery originals are not affected.',
+      message: 'Every app-managed image and its details, your custom categories, captured payments waiting to be filed, the screenshot inbox, and your business details will be permanently removed, and payment capture is turned off. Gallery originals are not affected.',
       buttons: [{ text: 'Cancel', role: 'cancel' }, { text: 'Erase everything', role: 'destructive', handler: () => void this.eraseAll() }],
     });
     await alert.present();
   }
 
   private async eraseAll(): Promise<void> {
-    const items = [...this.store.items()];
-    await this.store.clear();
-    await Promise.all(items.map((item) => this.images.remove(item.imageKey)));
-    this.categories.clear();
-    this.business.clear();
-    await this.capture.eraseData();
-    const toast = await this.toasts.create({ message: 'SnapSort data erased', duration: 2200 });
-    await toast.present();
+    try {
+      // Capture first, so no payment is filed into the library while it is being erased.
+      await this.capture.eraseData();
+      await this.store.clear();
+      await this.images.clearAll();
+      this.categories.clear();
+      this.business.clear();
+      await this.notify(this.capture.native ? 'SnapSort data erased. Payment capture is off.' : 'SnapSort data erased');
+    } catch {
+      await this.notify('Some data could not be erased. Try again.');
+    }
   }
 }
