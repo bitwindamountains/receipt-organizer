@@ -84,6 +84,17 @@ export class DatabaseService {
     await this.db.run('DELETE FROM items WHERE id = ?', [id]);
   }
 
+  /** Deletes every item, then VACUUM so erased rows are not left in the file's free pages. */
+  async clear(): Promise<void> {
+    await this.initialize();
+    if (!this.db) {
+      localStorage.removeItem(WEB_STORAGE_KEY);
+      return;
+    }
+    await this.db.run('DELETE FROM items');
+    await this.db.execute('VACUUM', false);
+  }
+
   private async initializeInternal(): Promise<void> {
     if (!Capacitor.isNativePlatform()) return;
     const sqlite = new SQLiteConnection(CapacitorSQLite);

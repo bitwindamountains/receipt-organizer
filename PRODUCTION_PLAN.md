@@ -68,13 +68,24 @@ The primary launch user is someone who regularly saves shopping, work, school, t
 - Biometric app lock
 - Dark theme if it is not complete at launch
 
+### Added to version 1 (October 2026)
+
+These were excluded in the original plan and now ship. Each runs on the device, is optional, and is covered by the privacy policy and the Play declarations in section 14.
+
+- On-device text reading (ML Kit) to fill in merchant, total, date, and category when adding an image; it can be turned off in Settings
+- Payment notification capture for GCash, Maya, and banks, behind an opt-in toggle and Android Notification access
+- Screenshot inbox: an opt-in scan of recent screenshots (`READ_MEDIA_IMAGES`) that offers payment screenshots for the user to add
+- Receipt maker for purchases without a receipt and for receipts issued to customers
+- Insights: monthly spending, categories, and top places
+- Warranty reminders as inexact local notifications
+
 ### Explicitly excluded from version 1
 
-- OCR or text search inside images
+- Text search inside images
 - AI classification or semantic search
 - Accounts, backend, cloud sync, or web app
-- Automatic gallery scanning or broad storage access
-- Expense analytics, tax workflows, warranty reminders, or PDF reports
+- Broad storage access (`MANAGE_EXTERNAL_STORAGE` or all-files access)
+- Tax workflows or PDF reports
 - Subscriptions, ads, and third-party behavioral analytics
 - Image editing
 
@@ -395,6 +406,7 @@ clean install -> full tests -> production web build -> Capacitor sync -> signed 
 - Data safety answers match the app and every bundled SDK, even when no data is collected.
 - Content rating, target audience, ads declaration, app access, and permissions declarations are complete.
 - Photo selection uses the system picker; the manifest contains no unnecessary broad storage permission.
+- Permission declarations are filed for Notification access (`BIND_NOTIFICATION_LISTENER_SERVICE`) and `READ_MEDIA_IMAGES` (screenshot inbox), each preceded by an in-app disclosure.
 - Backup behavior is explicitly configured for supported Android versions and validated on restore/device transfer.
 - Pre-launch report issues, accessibility findings, crashes, ANRs, and security scan findings are resolved or documented with release approval.
 - Support and incident response instructions exist before public launch.

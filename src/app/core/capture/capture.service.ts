@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ToastController } from '@ionic/angular';
 import { ItemFlow, SavedItem } from '../models/saved-item';
 import { ReceiptSuggestion, parseReceiptText, suggestCategory } from '../ocr/receipt-parser';
@@ -251,6 +252,10 @@ export class CaptureService {
 
   /** Part of "Erase all SnapSort data": drops captured payment texts, inbox entries, and what was already seen. */
   async eraseData(): Promise<void> {
+    // Off first, so no new payment starts filing; it also empties the native queue.
+    await this.setCaptureEnabled(false);
+    // An import still filing payments would otherwise write its keys back after they are cleared.
+    await this.queue;
     for (const entry of this.inbox()) if (entry.source === 'folder') this.images.release(entry.previewUrl);
     this.inbox.set([]);
     this.recent.set([]);
@@ -262,8 +267,8 @@ export class CaptureService {
       }
     }
     if (!this.native) return;
-    const { notifications } = await SnapSortCapture.getCapturedNotifications().catch(() => ({ notifications: [] as CapturedNotification[] }));
-    if (notifications.length) await SnapSortCapture.ackCapturedNotifications({ ids: notifications.map((notification) => notification.id) });
+    // Copies of images shared into SnapSort, and exported backups.
+    for (const path of ['shared', 'backups']) await Filesystem.rmdir({ path, directory: Directory.Cache, recursive: true }).catch(() => undefined);
   }
 
   async scanScreenshots(): Promise<void> {

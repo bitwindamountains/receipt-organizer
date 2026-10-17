@@ -75,6 +75,16 @@ export class ImageStorageService {
     await this.writeThumbnail(key, blob).catch(() => undefined);
   }
 
+  /** Erase all: removes every stored image and thumbnail, including ones no item points to. */
+  async clearAll(): Promise<void> {
+    if (Capacitor.isNativePlatform()) {
+      for (const path of ['images', 'thumbs']) await Filesystem.rmdir({ path, directory: Directory.Data, recursive: true }).catch(() => undefined);
+      return;
+    }
+    const db = await this.openBrowserDb();
+    await this.requestToPromise(db.transaction('images', 'readwrite').objectStore('images').clear());
+  }
+
   async remove(key: string): Promise<void> {
     if (Capacitor.isNativePlatform()) {
       await Filesystem.deleteFile({ path: key, directory: Directory.Data }).catch(() => undefined);
