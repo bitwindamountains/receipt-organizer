@@ -560,7 +560,7 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .helper, .inline-error { margin: 10px 5px 0; font-size: .91rem; line-height: 1.5; }
 .helper { color: var(--ion-color-medium); }
 .inline-error { color: var(--ion-color-danger); }
-.settings ion-list { margin-inline: 0; border: 1px solid var(--sn-border); border-radius: 18px; background: var(--sn-card); box-shadow: var(--sn-shadow-1); }
+.settings ion-list[inset] { margin-inline: 0; border: 1px solid var(--sn-border); border-radius: 18px; background: var(--sn-card); box-shadow: var(--sn-shadow-1); }
 .settings ion-list ion-item { --background: transparent; --border-color: var(--sn-border); }
 .settings ion-list ion-icon[slot='start'] { color: var(--ion-color-primary); }
 .about { margin: 30px 0 0; color: var(--ion-color-medium); font-size: .8rem; text-align: center; }

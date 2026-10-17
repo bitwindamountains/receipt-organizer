@@ -31,6 +31,10 @@ ion-header:not(.detail-header) {
 ion-header:not(.detail-header) ion-toolbar { --background: rgba(var(--ion-background-color-rgb), .7); }
 ion-title { font-weight: 780; letter-spacing: -.02em; }
 ion-button { --border-radius: 14px; text-transform: none; letter-spacing: 0; font-weight: 700; }
+// Material back buttons default to all caps ("CANCEL"); the app's controls are sentence case.
+ion-back-button { text-transform: none; letter-spacing: 0; }
+// Toggle labels hold a title and a description; Ionic clips them to one line.
+ion-toggle::part(label) { white-space: normal; overflow: visible; }
 ion-button[fill='solid']:not([color]), ion-button:not([fill]):not([color]) { --box-shadow: var(--sn-shadow-primary); }
 ion-toast { --border-radius: 16px; --box-shadow: var(--sn-shadow-3); --start: 16px; --end: 16px; font-weight: 600; }
 ion-alert .alert-wrapper { border-radius: var(--sn-radius-lg) !important; }

@@ -96,7 +96,7 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
               }
               @if (current.notes) { <div><dt>Notes</dt><dd class="notes">{{ current.notes }}</dd></div> }
               <div><dt>Category</dt><dd>{{ current.category }}</dd></div>
-              <div><dt>Saved</dt><dd>{{ current.createdAt | date: 'medium' }}</dd></div>
+              <div><dt>Saved</dt><dd>{{ current.createdAt | date: 'MMM d, y, h:mm a' }}</dd></div>
             </dl>
 
             <div class="detail-actions reveal" style="--i: 4">
