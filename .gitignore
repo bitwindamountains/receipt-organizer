@@ -52,6 +52,11 @@ Thumbs.db
 *.key
 *.p12
 *.pfx
+*.jks
+*.keystore
+keystore.properties
+key.properties
+google-services.json
 secrets/
 .claude/settings.local.json
 *.log

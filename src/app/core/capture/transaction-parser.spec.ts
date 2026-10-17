@@ -9,6 +9,11 @@ describe('transaction parser', () => {
     expect(result).toEqual(expect.objectContaining({ provider: 'GCash', flow: 'expense', amount: 500, counterparty: 'JU** DE** C', reference: '1234 567 890123', title: 'Sent to JU** DE** C' }));
   });
 
+  it('reads amounts written with no space after PHP or Php', () => {
+    expect(parseTransaction(note('ph.com.bdo.retail', 'BDO', 'You paid PHP1,250.00 to MERALCO.'))?.amount).toBe(1250);
+    expect(parseTransaction(note('ph.com.bdo.retail', 'BDO', 'You paid Php500.00 to MERALCO.'))?.amount).toBe(500);
+  });
+
   it('reads money received as income', () => {
     const result = parseTransaction(note('com.globe.gcash.android', 'GCash', 'You have received PHP 1,000.00 of GCash from MARIA SANTOS. Your new balance is PHP 2,234.56. Ref. No. 9876543210.'));
     expect(result).toEqual(expect.objectContaining({ flow: 'income', amount: 1000, counterparty: 'Maria Santos', title: 'Received from Maria Santos' }));

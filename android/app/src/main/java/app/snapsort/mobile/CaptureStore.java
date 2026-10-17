@@ -29,14 +29,17 @@ final class CaptureStore {
         return prefs(context).getBoolean(KEY_ENABLED, false);
     }
 
-    static void setEnabled(Context context, boolean enabled) {
+    // synchronized with append, so an append in flight cannot write the old queue back after a clear.
+    static synchronized void setEnabled(Context context, boolean enabled) {
         SharedPreferences.Editor editor = prefs(context).edit().putBoolean(KEY_ENABLED, enabled);
         // Turning capture off also discards anything waiting to be imported.
         if (!enabled) editor.putString(KEY_QUEUE, "[]");
         editor.apply();
     }
 
-    static synchronized void append(Context context, JSONObject entry) {
+    /** Returns false when capture was turned off after the service checked, so nothing was queued. */
+    static synchronized boolean append(Context context, JSONObject entry) {
+        if (!isEnabled(context)) return false;
         JSONArray queue = read(context);
         queue.put(entry);
         JSONArray trimmed = new JSONArray();
@@ -44,6 +47,7 @@ final class CaptureStore {
             trimmed.put(queue.opt(i));
         }
         prefs(context).edit().putString(KEY_QUEUE, trimmed.toString()).apply();
+        return true;
     }
 
     /** Reads the queue without clearing it; entries stay until {@link #remove} confirms they were filed. */

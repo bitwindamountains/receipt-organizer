@@ -38,7 +38,8 @@ export const KNOWN_PROVIDERS: Record<string, string> = {
   'com.grabtaxi.passenger': 'GrabPay',
 };
 
-const AMOUNT = /(?:₱|\bPHP\b|\bPhp\b|\bP(?=\s?\d))\s?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/g;
+// No trailing \b after PHP: banks write "PHP1,250.00" with no space.
+const AMOUNT = /(?:₱|\bPHP|\bPhp|\bP(?=\s?\d))\s?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/g;
 const BALANCE_CONTEXT = /(balance|bal\.?|available|limit)\s*(is|of|:)?\s*$/i;
 const PROMO = /\b(promo|cashback|voucher|win|offer|discount|up to|get ₱|earn|rewards?|deal|sale|loan offer|pre-?approved)\b/i;
 const INCOME = /\b(received|receive|credited|cash[- ]?in|deposited|incoming|refund(ed)?|sent you)\b/i;

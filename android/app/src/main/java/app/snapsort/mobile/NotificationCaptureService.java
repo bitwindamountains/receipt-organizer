@@ -27,6 +27,11 @@ public class NotificationCaptureService extends NotificationListenerService {
         "(?i)\\b(sent|paid|payment|purchase|debited|credited|received|transferred|cash[- ]?in|cash[- ]?out|withdraw|deposit|refund)"
     );
 
+    // One-time codes are never stored, even when they mention a payment amount.
+    private static final Pattern ONE_TIME_CODE = Pattern.compile(
+        "(?i)\\b(otp|one[- ]time|verification code|security code|passcode|pin)\\b"
+    );
+
     private static final Set<String> IGNORED_PACKAGES = new HashSet<>(
         Arrays.asList(
             "com.facebook.orca",
@@ -60,6 +65,7 @@ public class NotificationCaptureService extends NotificationListenerService {
         String body = text(big != null ? big : extras.getCharSequence(Notification.EXTRA_TEXT));
         String combined = title + " " + body;
         if (!AMOUNT.matcher(combined).find() || !PAYMENT_WORDS.matcher(combined).find()) return;
+        if (ONE_TIME_CODE.matcher(combined).find()) return;
 
         try {
             JSONObject entry = new JSONObject();
@@ -68,8 +74,7 @@ public class NotificationCaptureService extends NotificationListenerService {
             entry.put("title", title);
             entry.put("text", body);
             entry.put("postedAt", sbn.getPostTime());
-            CaptureStore.append(this, entry);
-            SnapSortCapturePlugin.onNotificationCaptured(entry);
+            if (CaptureStore.append(this, entry)) SnapSortCapturePlugin.onNotificationCaptured(entry);
         } catch (JSONException ignored) {
             // A malformed entry is dropped; the next notification is unaffected.
         }
