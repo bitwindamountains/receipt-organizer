@@ -198,7 +198,7 @@ export class AddItemPage implements OnInit {
   protected readonly native = this.capture.native;
   protected readonly dragging = signal(false);
 
-  protected readonly currencies = ['USD', 'PHP', 'EUR', 'GBP', 'CNY', 'JPY', 'AUD', 'CAD'];
+  protected readonly currencies = ['PHP', 'USD', 'EUR', 'GBP', 'CNY', 'JPY', 'AUD', 'CAD'];
   protected readonly maxImages = MAX_IMAGES;
   /** Images to save. Creating can take several at once; editing uses one. */
   protected readonly selection = signal<SelectedImage[]>([]);

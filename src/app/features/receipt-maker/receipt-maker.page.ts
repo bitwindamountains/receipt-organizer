@@ -15,7 +15,7 @@ import { PreferencesStore } from '../../core/services/preferences.store';
 import { ReplayAnimationDirective } from '../../shared/replay-animation.directive';
 
 const PAYMENTS = ['Cash', 'GCash', 'Maya', 'Card', 'Bank transfer'];
-const CURRENCIES = ['USD', 'PHP', 'EUR', 'GBP', 'CNY', 'JPY', 'AUD', 'CAD'];
+const CURRENCIES = ['PHP', 'USD', 'EUR', 'GBP', 'CNY', 'JPY', 'AUD', 'CAD'];
 const SALES_CATEGORY = 'Sales';
 
 const blankLine = (): ReceiptLine => ({ description: '', quantity: 1, price: 0 });

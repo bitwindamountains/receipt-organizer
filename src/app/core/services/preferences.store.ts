@@ -27,7 +27,7 @@ export class PreferencesStore {
 
   /** Currency of the last saved receipt, used as the default for the next one. */
   lastCurrency(): string {
-    return read(LAST_CURRENCY_KEY) || 'USD';
+    return read(LAST_CURRENCY_KEY) || 'PHP';
   }
 
   rememberCurrency(code: string): void {

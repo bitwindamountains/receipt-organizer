@@ -225,7 +225,7 @@ export class InsightsPage {
   protected readonly trendSummary = computed(() => `Monthly spending: ${(this.insights()?.trend ?? []).map((point) => `${point.label} ${this.money(point.amount)}`).join(', ')}`);
 
   protected readonly money = (minor: number) =>
-    new Intl.NumberFormat(undefined, { style: 'currency', currency: this.currency() ?? 'USD' }).format(minor / 100);
+    new Intl.NumberFormat(undefined, { style: 'currency', currency: this.currency() ?? 'PHP' }).format(minor / 100);
 
   constructor() {
     addIcons({ arrowDown, arrowUp, chevronBack, chevronForward, gridOutline, receiptOutline, storefrontOutline, trophyOutline });
@@ -244,7 +244,7 @@ export class InsightsPage {
   }
 
   protected compact(minor: number): string {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: this.currency() ?? 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(minor / 100);
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: this.currency() ?? 'PHP', notation: 'compact', maximumFractionDigits: 1 }).format(minor / 100);
   }
 
   protected percent(fraction: number): string {
