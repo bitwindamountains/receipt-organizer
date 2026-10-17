@@ -9,24 +9,25 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonNote,
   IonTitle,
   IonToggle,
   IonToolbar,
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, albumsOutline, close, cloudOfflineOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline } from 'ionicons/icons';
+import { add, albumsOutline, close, cloudOfflineOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline } from 'ionicons/icons';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
 import { PreferencesStore } from '../../core/services/preferences.store';
 import { CaptureService } from '../../core/capture/capture.service';
 import { BusinessProfileStore } from '../../core/receipts/business-profile.store';
+import { APP_VERSION, BackupService } from '../../core/backup/backup.service';
+import { BackupError } from '../../core/backup/backup-format';
 
 @Component({
   selector: 'app-settings',
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonNote, IonIcon, IonInput, IonButton, IonToggle],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonIcon, IonInput, IonButton, IonToggle],
   template: `
     <ion-header class="ion-no-border"><ion-toolbar><ion-title>Settings</ion-title></ion-toolbar></ion-header>
     <ion-content [fullscreen]="true">
@@ -117,10 +118,15 @@ import { BusinessProfileStore } from '../../core/receipts/business-profile.store
             <ion-icon slot="start" name="images-outline" aria-hidden="true" />
             <ion-label><h3>Storage</h3><p>{{ store.items().length }} saved {{ store.items().length === 1 ? 'item' : 'items' }}</p></ion-label>
           </ion-item>
-          <ion-item disabled>
-            <ion-icon slot="start" name="folder-open-outline" aria-hidden="true" />
-            <ion-label>Export or restore backup</ion-label><ion-note slot="end">Coming soon</ion-note>
+          <ion-item lines="full" button [detail]="false" [disabled]="backupBusy()" (click)="exportBackup()">
+            <ion-icon slot="start" name="download-outline" aria-hidden="true" />
+            <ion-label><h3>Export backup</h3><p>Uninstalling SnapSort deletes its data. Save a backup somewhere else to keep a copy.</p></ion-label>
           </ion-item>
+          <ion-item lines="full" button [detail]="false" [disabled]="backupBusy()" (click)="restoreInput.click()">
+            <ion-icon slot="start" name="folder-open-outline" aria-hidden="true" />
+            <ion-label><h3>Restore from backup</h3><p>Adds the items from a backup file. Nothing already here is changed.</p></ion-label>
+          </ion-item>
+          <input #restoreInput type="file" accept=".zip,application/zip" hidden (change)="restoreBackup(restoreInput)" />
           <ion-item lines="none">
             <ion-icon slot="start" name="cloud-offline-outline" aria-hidden="true" />
             <ion-label><h3>Works offline</h3><p>No account or connection required</p></ion-label>
@@ -135,7 +141,7 @@ import { BusinessProfileStore } from '../../core/receipts/business-profile.store
           </ion-item>
         </ion-list>
 
-        <p class="about">SnapSort 0.2.0 · Made to stay on your device</p>
+        <p class="about">SnapSort {{ appVersion }} · Made to stay on your device</p>
       </main>
     </ion-content>
   `,
@@ -151,9 +157,12 @@ export class SettingsPage {
   private readonly toasts = inject(ToastController);
   protected readonly categoryName = signal('');
   protected readonly categoryError = signal('');
+  protected readonly backupBusy = signal(false);
+  protected readonly appVersion = APP_VERSION;
+  private readonly backup = inject(BackupService);
 
   constructor() {
-    addIcons({ add, albumsOutline, close, cloudOfflineOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline });
+    addIcons({ add, albumsOutline, close, cloudOfflineOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline });
     void this.store.load();
   }
 
@@ -214,6 +223,42 @@ export class SettingsPage {
       return;
     }
     this.categories.remove(name);
+  }
+
+  async exportBackup(): Promise<void> {
+    this.backupBusy.set(true);
+    try {
+      const { exported, missing } = await this.backup.export();
+      const left = missing ? ` ${missing} without an image file ${missing === 1 ? 'was' : 'were'} left out.` : '';
+      await this.notify(`Backup of ${exported} ${exported === 1 ? 'item' : 'items'} ready.${left}`);
+    } catch {
+      await this.notify('The backup could not be created. Check free space and try again.');
+    } finally {
+      this.backupBusy.set(false);
+    }
+  }
+
+  async restoreBackup(input: HTMLInputElement): Promise<void> {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    this.backupBusy.set(true);
+    try {
+      const { imported, skipped, failed } = await this.backup.restore(file);
+      const parts = [`Restored ${imported} ${imported === 1 ? 'item' : 'items'}`];
+      if (skipped) parts.push(`${skipped} already here`);
+      if (failed) parts.push(`${failed} could not be restored`);
+      await this.notify(`${parts.join(', ')}.`);
+    } catch (error) {
+      await this.notify(error instanceof BackupError ? error.message : 'This file could not be read as a SnapSort backup.');
+    } finally {
+      this.backupBusy.set(false);
+    }
+  }
+
+  private async notify(message: string): Promise<void> {
+    const toast = await this.toasts.create({ message, duration: 3200 });
+    await toast.present();
   }
 
   async confirmErase(): Promise<void> {

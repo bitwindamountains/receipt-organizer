@@ -2,6 +2,13 @@
 
 Updated: October 2, 2026 - auto-capture
 
+## Backup and restore (October 17, 2026)
+
+- **Export** (Settings > Your data) writes `snapsort-backup-YYYY-MM-DD.zip`: `categories.json`, every item's image under its `images/` key, `items.json`, and a final `manifest.json` (format, version 1, app version, SHA-256 of every entry). It is streamed one image at a time with `fflate` and handed to the Android share sheet (save to Files or Drive) or downloaded in the browser. Items whose image file is missing are left out and counted.
+- **Restore** picks a file, then verifies the whole archive (format, version, entry names, every record, every checksum) before changing anything. It merges: items whose id or image already exists are skipped, never overwritten. It reports imported, skipped, and failed counts. Thumbnails are rebuilt on save.
+- Not built: "replace everything" with a recovery point (erase then restore covers it), and a free-space check before restore.
+- Device check needed: export and restore of a large library on Android (share sheet targets, file picker, memory).
+
 ## Auto-capture (October 2, 2026)
 
 - **Payment notifications (Android):** opt-in notification capture turns GCash, Maya, and bank payment notifications into receipts automatically. Each receipt gets a drawn receipt image, is tagged `auto-captured` and with the provider, and is de-duplicated by reference number (or amount and minute). Received money is recorded as income.

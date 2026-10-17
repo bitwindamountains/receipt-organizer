@@ -69,6 +69,12 @@ export class ImageStorageService {
     if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
   }
 
+  /** Writes an image under an existing key (backup restore), with its thumbnail. */
+  async store(key: string, blob: Blob): Promise<void> {
+    await this.write(key, blob);
+    await this.writeThumbnail(key, blob).catch(() => undefined);
+  }
+
   async remove(key: string): Promise<void> {
     if (Capacitor.isNativePlatform()) {
       await Filesystem.deleteFile({ path: key, directory: Directory.Data }).catch(() => undefined);
@@ -137,7 +143,7 @@ export class ImageStorageService {
     return blob ? URL.createObjectURL(blob) : '';
   }
 
-  private async readBlob(key: string): Promise<Blob | undefined> {
+  async readBlob(key: string): Promise<Blob | undefined> {
     if (!Capacitor.isNativePlatform()) return this.readBrowserBlob(key);
     const result = await Filesystem.getUri({ path: key, directory: Directory.Data });
     const response = await fetch(Capacitor.convertFileSrc(result.uri));
