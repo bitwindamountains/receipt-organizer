@@ -1,6 +1,15 @@
 # Production Status
 
-Updated: October 2, 2026 - auto-capture
+Updated: October 25, 2026 - release build
+
+## Release build and dependency audit (October 25, 2026)
+
+- **Release hardening merged** (PR #2): device transfer and cloud backup are blocked, Erase everything removes all files, and receipt totals no longer misread space-separated numbers.
+- **Dependencies** (PR #3): Angular 22.2.3, `@angular/build`/`@angular/cli` 22.2.4, fflate 0.8.3. `npm audit --omit=dev` reports 0 vulnerabilities. Two dev-only findings remain: vite 8.3.0, which only affects the dev server and is pinned exactly by `@angular/build`, and uuid, which comes through the Capacitor CLI's iOS tooling (fixing it needs `--force`, which downgrades the CLI).
+- **Builds:** `npm run check` passes (59 tests). With JDK 21 (`C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot`, set `JAVA_HOME`), `assembleRelease` builds a 56 MB APK and `bundleRelease` builds a 30 MB AAB, both version 0.2.0 / `versionCode 2`. Most of the APK is the ML Kit OCR library, once per ABI; Play's per-ABI splits should make the download much smaller.
+- **Both builds are unsigned:** `android/keystore.properties` does not exist yet, and Play only accepts a signed AAB.
+- **CI:** `.github/workflows/ci.yml` exists, but no checks ran on PR #3. Check that Actions is enabled for the repository.
+- **Release blockers still open:** upload key and a signed AAB; install and smoke test on a physical Android 13+ device; real GCash/Maya/bank notification wording; Play declarations for notification access and `READ_MEDIA_IMAGES`; Data safety, content rating, store assets, and a hosted privacy policy; internal track, then closed beta.
 
 ## Backup and restore (October 17, 2026)
 
