@@ -6,9 +6,10 @@ Updated: November 20, 2026 - renamed to Starlog, installable web version (PWA), 
 
 - Every visible name is now Starlog: Android app label, page title, web manifest, screens, receipt footer ("Made with Starlog"), backup file name (`starlog-backup-YYYY-MM-DD.zip`), privacy policy.
 - Internal IDs keep `snapsort` on purpose: package `app.snapsort.mobile` (Play treats a new ID as a new app), storage keys and SQLite name (existing data), backup format `snapsort-backup` (old backups still restore), the `SnapSortCapture` plugin.
-- New look: star-and-comet logo (`shared/star-mark.component.ts`), comet-blue `--sn-star` tokens, night-sky app icons (web, Android launcher, adaptive icon, splash), twinkling stars and a passing comet in the ambient backdrop, a comet off the onboarding stack, star-shaped favorite sparkles, a glinting logo. All motion is behind reduced-motion.
+- New look: star-and-comet logo (`shared/star-mark.component.ts`), jade/mint `--sn-star` tokens (a lighter step of the brand green), deep-green night-sky app icons (web, Android launcher, adaptive icon, splash), twinkling stars and a passing comet in the ambient backdrop, a comet off the onboarding stack, star-shaped favorite sparkles, a glinting logo. All motion is behind reduced-motion.
 - Icons were drawn by a one-off script from the logo geometry; the old placeholder icon is gone.
-- Not yet checked on a device or in a browser screenshot. Check the Play Store and trademarks for the name before release.
+- UI review fixes (same day): cards, Library sort and month groups use the receipt's purchase date (`itemDateKey`/`itemDate` in `item-display.ts`, falling back to the save date); a near-opaque dock with a fade above it; 48 px touch targets (category chips, custom-category chips; 44 px segment and Table toggle); no text under 12 px; stars kept to the edges away from headings; short wide receipts shown whole instead of side-cropped; a slim label-less dock in landscape; equal-width tabs so the selected pill is centred.
+- Checked with headless Chrome at 375 px, light, dark and landscape. Not yet checked on a device. Check the Play Store and trademarks for the name before release.
 
 ## Installable web version (November 20, 2026)
 

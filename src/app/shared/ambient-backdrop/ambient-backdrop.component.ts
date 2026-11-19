@@ -24,12 +24,12 @@ const HERO_DOCS: DriftDoc[] = [
 
 interface Star { x: number; y: number; size: number; delay: number; }
 
-// A loose constellation behind the slips; each twinkles on its own beat.
+// A loose constellation along the top and right edges, clear of headings; each twinkles on its own beat.
 const STARS: Star[] = [
-  { x: 14, y: 12, size: 12, delay: 0 }, { x: 32, y: 26, size: 7, delay: -1.6 }, { x: 52, y: 9, size: 9, delay: -3.1 },
-  { x: 71, y: 30, size: 14, delay: -.8 }, { x: 93, y: 16, size: 7, delay: -2.4 }, { x: 24, y: 44, size: 9, delay: -4.2 },
-  { x: 47, y: 38, size: 6, delay: -2 }, { x: 84, y: 52, size: 10, delay: -3.6 }, { x: 8, y: 30, size: 6, delay: -1.1 },
-  { x: 61, y: 60, size: 8, delay: -4.8 },
+  { x: 6, y: 3, size: 9, delay: 0 }, { x: 30, y: 2, size: 6, delay: -1.6 }, { x: 50, y: 5, size: 8, delay: -3.1 },
+  { x: 80, y: 30, size: 12, delay: -.8 }, { x: 94, y: 13, size: 7, delay: -2.4 }, { x: 89, y: 48, size: 9, delay: -4.2 },
+  { x: 97, y: 37, size: 6, delay: -2 }, { x: 76, y: 63, size: 8, delay: -3.6 }, { x: 2, y: 62, size: 6, delay: -1.1 },
+  { x: 86, y: 78, size: 7, delay: -4.8 },
 ];
 
 const FULL_DOCS: DriftDoc[] = [

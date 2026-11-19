@@ -7,8 +7,19 @@ export function displayTitle(item: SavedItem): string {
     `${item.type === 'receipt' ? 'Receipt' : 'Screenshot'} · ${new Intl.DateTimeFormat(undefined, {
       month: 'short',
       day: 'numeric',
-    }).format(new Date(item.createdAt))}`
+    }).format(itemDate(item))}`
   );
+}
+
+/** The date an item is about: its purchase date, or the day it was saved when it has none. As `YYYY-MM-DD`. */
+export function itemDateKey(item: SavedItem): string {
+  return item.purchaseDate ?? localDateKey(new Date(item.createdAt));
+}
+
+/** `itemDateKey` as a local-midnight Date, for formatting. */
+export function itemDate(item: SavedItem): Date {
+  const [year, month, day] = itemDateKey(item).split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 export function formatAmount(item: SavedItem): string | null {
@@ -69,7 +80,7 @@ export function receiptTotal(items: SavedItem[]): ReceiptTotal | null {
  */
 export function monthlyReceiptSummary(items: SavedItem[], now = new Date()): MonthlyReceiptSummary | null {
   const monthKey = localDateKey(now).slice(0, 7);
-  const thisMonth = items.filter((item) => (item.purchaseDate ?? localDateKey(new Date(item.createdAt))).startsWith(monthKey));
+  const thisMonth = items.filter((item) => itemDateKey(item).startsWith(monthKey));
   const total = receiptTotal(thisMonth);
   return total && { ...total, month: new Intl.DateTimeFormat(undefined, { month: 'long' }).format(now) };
 }
@@ -81,12 +92,12 @@ export interface MonthGroup {
   receipts: ReceiptTotal | null;
 }
 
-/** Splits already-sorted items into runs by the local month they were saved in. */
+/** Splits already-sorted items into runs by month of their item date (purchase date, else saved date). */
 export function groupByMonth(items: SavedItem[], now = new Date()): MonthGroup[] {
   const groups: MonthGroup[] = [];
   for (const item of items) {
-    const saved = new Date(item.createdAt);
-    const key = localDateKey(saved).slice(0, 7);
+    const saved = itemDate(item);
+    const key = itemDateKey(item).slice(0, 7);
     let group = groups.at(-1);
     if (group?.key !== key) {
       const sameYear = saved.getFullYear() === now.getFullYear();

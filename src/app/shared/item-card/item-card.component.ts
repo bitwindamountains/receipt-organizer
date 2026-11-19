@@ -6,17 +6,17 @@ import { addIcons } from 'ionicons';
 import { receiptOutline, imageOutline, star } from 'ionicons/icons';
 import { SavedItem } from '../../core/models/saved-item';
 import { injectImageUrl } from '../../core/services/image-url';
-import { displayTitle, formatAmount } from '../../core/utils/item-display';
+import { displayTitle, formatAmount, itemDate } from '../../core/utils/item-display';
 
 @Component({
   selector: 'app-item-card',
   imports: [RouterLink, IonIcon, DatePipe],
   template: `
     <a class="item-card scroll-card" [routerLink]="['/item', item().id]">
-      <div class="thumb" [class.is-loaded]="loaded()">
+      <div class="thumb" [class.is-loaded]="loaded()" [class.is-wide]="wide()">
         <span class="thumb-skeleton" aria-hidden="true"></span>
         @if (imageUrl()) {
-          <img [src]="imageUrl()" alt="" loading="lazy" decoding="async" (load)="markLoaded(imageUrl())" (error)="markLoaded(imageUrl())" />
+          <img [src]="imageUrl()" alt="" loading="lazy" decoding="async" (load)="markLoaded(imageUrl(), $event)" (error)="markLoaded(imageUrl())" />
         }
         <span class="type-badge">
           <ion-icon [name]="item().type === 'receipt' ? 'receipt-outline' : 'image-outline'" aria-hidden="true" />
@@ -28,7 +28,7 @@ import { displayTitle, formatAmount } from '../../core/utils/item-display';
       </div>
       <div class="item-copy">
         <strong>{{ displayTitle(item()) }}</strong>
-        <span class="meta">{{ item().category }} · {{ item().createdAt | date: 'MMM d' }}</span>
+        <span class="meta">{{ item().category }} · {{ date() | date: 'MMM d' }}</span>
         @if (formatAmount(item()); as amount) { <span class="amount num">{{ amount }}</span> }
       </div>
     </a>
@@ -36,8 +36,11 @@ import { displayTitle, formatAmount } from '../../core/utils/item-display';
 })
 export class ItemCardComponent {
   readonly item = input.required<SavedItem>();
+  protected readonly date = computed(() => itemDate(this.item()));
   protected readonly imageUrl = injectImageUrl(() => this.item().imageKey, 'thumb');
   private readonly loadedUrl = signal('');
+  /** Wider than tall (a short receipt): shown whole, since a square crop would cut words at both sides. */
+  protected readonly wide = signal(false);
   protected readonly loaded = computed(() => Boolean(this.imageUrl()) && this.loadedUrl() === this.imageUrl());
   protected readonly displayTitle = displayTitle;
   protected readonly formatAmount = formatAmount;
@@ -46,7 +49,9 @@ export class ItemCardComponent {
     addIcons({ receiptOutline, imageOutline, star });
   }
 
-  protected markLoaded(url: string): void {
+  protected markLoaded(url: string, event?: Event): void {
+    const image = event?.target as HTMLImageElement | undefined;
+    this.wide.set(!!image && image.naturalWidth > image.naturalHeight);
     this.loadedUrl.set(url);
   }
 }
