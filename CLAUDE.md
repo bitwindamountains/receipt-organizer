@@ -13,11 +13,11 @@ npm test -- --watch=false         # Vitest via `ng test`
 npm test -- --watch=false --include src/app/core/ocr/receipt-parser.spec.ts   # one spec file
 npm run typecheck
 npm run build:production          # Android web bundle (no Tesseract files)
-npm run build:web                 # hosted browser demo (adds Tesseract under ocr/)
+npm run build:web                 # hosted browser demo as an installable PWA (adds Tesseract under ocr/, service worker, manifest)
 npm run cap:sync                  # copy build into android/; rerun after plugin changes
 ```
 
-Android (no Android Studio needed). JDK 21 is at `C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot` and is not on PATH, so set `JAVA_HOME` first:
+Android (no Android Studio needed). JDK 21 is at `C:\Program Files\Microsoft\jdk-21.0.13.21-hotspot` and is not on PATH, so set `JAVA_HOME` first:
 
 ```bash
 cd android && ./gradlew assembleDebug      # or assembleRelease / bundleRelease
@@ -34,6 +34,7 @@ Release builds are only signed when `android/keystore.properties` exists (gitign
 - **Receipt reading:** `core/ocr/text-recognition.service.ts` uses ML Kit on Android and Tesseract.js in the browser. `receipt-parser.ts` turns the text into fields; it is pure and well tested, so put parsing changes there with specs.
 - **Auto-capture:** native Java in `android/app/src/main/java/app/snapsort/mobile/`. `NotificationCaptureService` filters payment notifications into `CaptureStore`, and `SnapSortCapturePlugin` exposes the queue, screenshots and share intents. The TypeScript side is `core/capture/`: `capture-plugin.ts` is the bridge, `transaction-parser.ts` parses, and `capture.service.ts` files receipts and acks the queue only after saving.
 - **Backup:** `core/backup/` writes and reads a ZIP (fflate, streamed) with `manifest.json` checksums. Restore validates the whole archive before writing anything, and merges without overwriting existing items.
+- **PWA (web build only):** `angular.json` defines `PWA` as `false` except in the `web` configuration, which also adds `ngsw-config.json` (Angular service worker) and the `web/` folder (manifest, icons). `main.ts` registers the worker and manifest link behind `if (PWA)`, so the Android bundle contains none of it. Fonts and app code are cached on install; OCR files only when first used.
 - **Receipt maker:** `core/receipts/` renders receipt PNGs for purchases with no receipt and for sales (`flow: 'income'`; sales never count as spending).
 
 ## Constraints
