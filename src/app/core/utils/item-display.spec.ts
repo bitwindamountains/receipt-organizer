@@ -1,5 +1,5 @@
 import { SavedItem } from '../models/saved-item';
-import { displayTitle, formatAmount, groupByMonth, matchesQuery, monthlyReceiptSummary } from './item-display';
+import { displayTitle, formatAmount, groupByMonth, itemDate, itemDateKey, matchesQuery, monthlyReceiptSummary } from './item-display';
 
 const item: SavedItem = {
   id: 'one',
@@ -64,10 +64,10 @@ describe('item display utilities', () => {
     const now = new Date(2026, 9, 15);
     const at = (y: number, m: number, d: number) => new Date(y, m, d, 12).toISOString();
     const groups = groupByMonth([
-      { ...item, id: 'a', createdAt: at(2026, 9, 3), amountMinor: 1000 },
-      { ...item, id: 'b', createdAt: at(2026, 9, 1), amountMinor: 2500 },
-      { ...item, id: 'c', type: 'screenshot', createdAt: at(2026, 8, 20) },
-      { ...item, id: 'd', createdAt: at(2025, 11, 31) },
+      { ...item, id: 'a', purchaseDate: null, createdAt: at(2026, 9, 3), amountMinor: 1000 },
+      { ...item, id: 'b', purchaseDate: '2026-10-01', createdAt: at(2026, 10, 20), amountMinor: 2500 },
+      { ...item, id: 'c', type: 'screenshot', purchaseDate: null, createdAt: at(2026, 8, 20) },
+      { ...item, id: 'd', purchaseDate: null, createdAt: at(2025, 11, 31) },
     ], now);
     expect(groups.map((group) => group.items.map((entry) => entry.id))).toEqual([['a', 'b'], ['c'], ['d']]);
     expect(groups[0].receipts?.count).toBe(2);
@@ -75,5 +75,11 @@ describe('item display utilities', () => {
     expect(groups[1].receipts).toBeNull();
     expect(groups[2].label).toContain('2025');
     expect(groups[0].label).not.toContain('2026');
+  });
+
+  it('dates items by purchase date, falling back to the day they were saved', () => {
+    expect(itemDateKey({ ...item, purchaseDate: '2026-03-02', createdAt: '2026-09-11T04:00:00.000Z' })).toBe('2026-03-02');
+    expect(itemDate({ ...item, purchaseDate: '2026-03-02' }).getDate()).toBe(2);
+    expect(itemDateKey({ ...item, purchaseDate: null, createdAt: new Date(2026, 4, 9, 12).toISOString() })).toBe('2026-05-09');
   });
 });

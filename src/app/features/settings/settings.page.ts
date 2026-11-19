@@ -35,7 +35,7 @@ import { DemoService } from '../../core/demo/demo.service';
       <main class="page-width content-pad settings">
         <section class="privacy-card reveal">
           <span class="privacy-lock" aria-hidden="true"><ion-icon name="lock-closed" /></span>
-          <div><h2>Private by design</h2><p>Your library stays on this device. SnapSort has no ads, account, or tracking SDK.</p></div>
+          <div><h2>Private by design</h2><p>Your library stays on this device. Starlog has no ads, account, or tracking SDK.</p></div>
         </section>
 
         <p class="group-title">Custom categories</p>
@@ -129,7 +129,7 @@ import { DemoService } from '../../core/demo/demo.service';
           </ion-item>
           <ion-item lines="full" button [detail]="false" [disabled]="backupBusy()" (click)="exportBackup()">
             <ion-icon slot="start" name="download-outline" aria-hidden="true" />
-            <ion-label><h3>Export backup</h3><p>Uninstalling SnapSort deletes its data. Save a backup somewhere else to keep a copy.</p></ion-label>
+            <ion-label><h3>Export backup</h3><p>Uninstalling Starlog deletes its data. Save a backup somewhere else to keep a copy.</p></ion-label>
           </ion-item>
           <ion-item lines="full" button [detail]="false" [disabled]="backupBusy()" (click)="restoreInput.click()">
             <ion-icon slot="start" name="folder-open-outline" aria-hidden="true" />
@@ -147,11 +147,11 @@ import { DemoService } from '../../core/demo/demo.service';
           <!-- Disabled mid demo load: the load would keep saving receipts after the erase. -->
           <ion-item button lines="none" [disabled]="demo.busy()" (click)="confirmErase()" [detail]="false">
             <ion-icon slot="start" color="danger" name="trash-outline" aria-hidden="true" />
-            <ion-label color="danger">Erase all SnapSort data</ion-label>
+            <ion-label color="danger">Erase all Starlog data</ion-label>
           </ion-item>
         </ion-list>
 
-        <p class="about">SnapSort {{ appVersion }} · Made to stay on your device</p>
+        <p class="about">Starlog {{ appVersion }} · Made to stay on your device</p>
       </main>
     </ion-content>
   `,
@@ -183,7 +183,7 @@ export class SettingsPage {
     if (enabled && !this.capture.status().accessGranted) {
       const alert = await this.alerts.create({
         header: 'Allow Notification access',
-        message: 'Android will open its Notification access settings. Turn on SnapSort there, then come back. SnapSort only keeps notifications that look like payments, and they never leave this device.',
+        message: 'Android will open its Notification access settings. Turn on Starlog there, then come back. Starlog only keeps notifications that look like payments, and they never leave this device.',
         buttons: [
           { text: 'Not now', role: 'cancel' },
           { text: 'Continue', role: 'confirm' },
@@ -271,7 +271,7 @@ export class SettingsPage {
       if (failed) parts.push(`${failed} could not be restored`);
       await this.notify(`${parts.join(', ')}.`);
     } catch (error) {
-      await this.notify(error instanceof BackupError ? error.message : 'This file could not be read as a SnapSort backup.');
+      await this.notify(error instanceof BackupError ? error.message : 'This file could not be read as a Starlog backup.');
     } finally {
       this.backupBusy.set(false);
     }
@@ -284,7 +284,7 @@ export class SettingsPage {
 
   async confirmErase(): Promise<void> {
     const alert = await this.alerts.create({
-      header: 'Erase all SnapSort data?',
+      header: 'Erase all Starlog data?',
       message: 'Every app-managed image and its details, your custom categories, captured payments waiting to be filed, the screenshot inbox, and your business details will be permanently removed, and payment capture is turned off. Gallery originals are not affected.',
       buttons: [{ text: 'Cancel', role: 'cancel' }, { text: 'Erase everything', role: 'destructive', handler: () => void this.eraseAll() }],
     });
@@ -299,7 +299,7 @@ export class SettingsPage {
       await this.images.clearAll();
       this.categories.clear();
       this.business.clear();
-      await this.notify(this.capture.native ? 'SnapSort data erased. Payment capture is off.' : 'SnapSort data erased');
+      await this.notify(this.capture.native ? 'Starlog data erased. Payment capture is off.' : 'Starlog data erased');
     } catch {
       await this.notify('Some data could not be erased. Try again.');
     }

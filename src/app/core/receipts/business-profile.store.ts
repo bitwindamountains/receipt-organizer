@@ -32,7 +32,7 @@ export class BusinessProfileStore {
     write(NUMBER_KEY, number);
   }
 
-  /** Part of "Erase all SnapSort data". */
+  /** Part of "Erase all Starlog data". */
   clear(): void {
     try {
       localStorage.removeItem(PROFILE_KEY);

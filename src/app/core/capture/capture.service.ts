@@ -55,7 +55,7 @@ type PickerWindow = Window & { showDirectoryPicker?: (options: { id?: string; mo
  * - payment notifications from GCash, Maya, and banks become receipts (Android);
  * - new payment screenshots are found and offered in an inbox (Android gallery,
  *   or a chosen folder in Chromium browsers);
- * - images shared into SnapSort open on the Add page (Android).
+ * - images shared into Starlog open on the Add page (Android).
  */
 @Injectable({ providedIn: 'root' })
 export class CaptureService {
@@ -101,7 +101,7 @@ export class CaptureService {
     void this.store.load().then(() => this.refresh());
   }
 
-  /** Imports anything that arrived while SnapSort was in the background. */
+  /** Imports anything that arrived while Starlog was in the background. */
   async refresh(): Promise<void> {
     if (this.native) {
       this.status.set(await SnapSortCapture.getCaptureStatus().catch(() => this.status()));
@@ -250,7 +250,7 @@ export class CaptureService {
     persistEntries([]);
   }
 
-  /** Part of "Erase all SnapSort data": drops captured payment texts, inbox entries, and what was already seen. */
+  /** Part of "Erase all Starlog data": drops captured payment texts, inbox entries, and what was already seen. */
   async eraseData(): Promise<void> {
     // Off first, so no new payment starts filing; it also empties the native queue.
     await this.setCaptureEnabled(false);
@@ -267,7 +267,7 @@ export class CaptureService {
       }
     }
     if (!this.native) return;
-    // Copies of images shared into SnapSort, and exported backups.
+    // Copies of images shared into Starlog, and exported backups.
     for (const path of ['shared', 'backups']) await Filesystem.rmdir({ path, directory: Directory.Cache, recursive: true }).catch(() => undefined);
   }
 
@@ -436,7 +436,7 @@ export class CaptureService {
       }));
   }
 
-  // ---------- Shared into SnapSort ----------
+  // ---------- Shared into Starlog ----------
 
   private async collectShares(): Promise<void> {
     if (!this.native) return;

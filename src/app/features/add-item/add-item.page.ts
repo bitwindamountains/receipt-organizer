@@ -240,7 +240,7 @@ export class AddItemPage implements OnInit {
   constructor() {
     addIcons({ add, checkmarkCircle, chevronForward, close, cloudUploadOutline, createOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline });
     inject(DestroyRef).onDestroy(() => this.selection().forEach((image) => this.images.release(image.sourceUrl)));
-    // Images shared into SnapSort from another app land here.
+    // Images shared into Starlog from another app land here.
     effect(() => {
       if (!this.capture.pendingShares().length || this.route.snapshot.paramMap.get('id')) return;
       untracked(() => this.addImages(this.capture.takeShares()));

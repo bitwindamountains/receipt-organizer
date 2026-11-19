@@ -20,7 +20,7 @@ import { closeCircle, star, starOutline } from 'ionicons/icons';
 import { ItemType, SavedItem } from '../../core/models/saved-item';
 import { CategoryStore } from '../../core/services/category.store';
 import { ItemStore } from '../../core/services/item.store';
-import { MonthGroup, displayTitle, groupByMonth, matchesQuery } from '../../core/utils/item-display';
+import { MonthGroup, displayTitle, groupByMonth, itemDateKey, matchesQuery } from '../../core/utils/item-display';
 import { ItemCardComponent } from '../../shared/item-card/item-card.component';
 
 type SortOrder = 'newest' | 'oldest' | 'title';
@@ -67,9 +67,10 @@ type SortOrder = 'newest' | 'oldest' | 'title';
               @if (group.label) {
                 <header class="month-header">
                   <h2>{{ group.label }}</h2>
+                  <!-- With one month the count above already says it; only the total is new. -->
                   <span class="num">
-                    {{ group.items.length }} {{ group.items.length === 1 ? 'item' : 'items' }}
-                    @if (group.receipts; as receipts) { · {{ receipts.total }}@if (receipts.otherCurrencies) {+} }
+                    @if (groups().length > 1) { {{ group.items.length }} {{ group.items.length === 1 ? 'item' : 'items' }} }
+                    @if (group.receipts; as receipts) { @if (groups().length > 1) { · }{{ receipts.total }}@if (receipts.otherCurrencies) {+} }
                   </span>
                 </header>
               }
@@ -167,6 +168,8 @@ export class LibraryPage implements OnInit {
         .sort((a, b) => collator.compare(a.title, b.title))
         .map(({ item }) => item);
     }
-    return [...items].sort((a, b) => order === 'oldest' ? a.createdAt.localeCompare(b.createdAt) : b.createdAt.localeCompare(a.createdAt));
+    // By the date on the receipt (else the day it was saved); items from the same day keep save order.
+    const byDate = (a: SavedItem, b: SavedItem) => itemDateKey(a).localeCompare(itemDateKey(b)) || a.createdAt.localeCompare(b.createdAt);
+    return [...items].sort((a, b) => (order === 'oldest' ? byDate(a, b) : byDate(b, a)));
   }
 }
