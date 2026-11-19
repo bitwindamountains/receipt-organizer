@@ -1,0 +1,13 @@
+# Hosted web version (PWA). The Android app does not use this.
+[build]
+  command = "npm run build:web"
+  publish = "dist/snapsort/browser"
+
+[build.environment]
+  NODE_VERSION = "24.15.0"
+
+# Single-page app: unknown paths such as /library load index.html, and the router takes over.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
