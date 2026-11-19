@@ -1,6 +1,12 @@
 # Production Status
 
-Updated: October 25, 2026 - release build
+Updated: November 20, 2026 - demo mode, version 0.3.0
+
+## Demo mode (November 20, 2026)
+
+- **Demo receipts:** onboarding's "Explore with demo receipts" and Settings > Your data > Load/Remove demo receipts. Twelve PHP receipts over five months (purchases, one sale, favourites, two warranties), drawn by the receipt renderer and tagged `demo receipt`. Remove deletes only items with that tag and their images. A load that fails partway is undone. Demo items never schedule warranty notifications.
+- **Version:** 0.3.0 / `versionCode 3` (`build.gradle`, `package.json`, `APP_VERSION`).
+- Device check needed: demo load time on a low-end Android phone (12 canvas renders plus thumbnails).
 
 ## Release build and dependency audit (October 25, 2026)
 

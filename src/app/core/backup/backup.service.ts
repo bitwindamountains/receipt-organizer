@@ -8,7 +8,7 @@ import { ImageStorageService } from '../services/image-storage.service';
 import { ItemStore } from '../services/item.store';
 import { BackupError, createBackupWriter, isBackupEntry, parseCategories, parseItems, parseManifest, readBackup, sha256 } from './backup-format';
 
-export const APP_VERSION = '0.2.0';
+export const APP_VERSION = '0.3.0';
 const BACKUP_DIR = 'backups';
 
 export interface ExportResult {
