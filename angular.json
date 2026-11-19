@@ -46,7 +46,10 @@
             "allowedCommonJsDependencies": [
               "tesseract.js",
               "regenerator-runtime"
-            ]
+            ],
+            "define": {
+              "PWA": "false"
+            }
           },
           "configurations": {
             "production": {
@@ -91,6 +94,10 @@
               ]
             },
             "web": {
+              "define": {
+                "PWA": "true"
+              },
+              "serviceWorker": "ngsw-config.json",
               "assets": [
                 {
                   "glob": "**/*",
@@ -110,6 +117,10 @@
                   "glob": "eng.traineddata.gz",
                   "input": "node_modules/@tesseract.js-data/eng/4.0.0_best_int",
                   "output": "ocr"
+                },
+                {
+                  "glob": "**/*",
+                  "input": "web"
                 }
               ]
             }

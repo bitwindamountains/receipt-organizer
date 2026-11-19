@@ -1,6 +1,15 @@
 # Production Status
 
-Updated: November 20, 2026 - demo mode, version 0.3.0
+Updated: November 20, 2026 - installable web version (PWA), demo mode, version 0.3.0
+
+## Installable web version (November 20, 2026)
+
+- `npm run build:web` now produces a PWA: web manifest, 192/512 px icons (`web/`), and the Angular service worker (`ngsw-config.json`). App code and fonts are cached on first visit; Tesseract files under `/ocr` only once reading is used.
+- Android is unchanged: the code sits behind a compile-time `PWA` flag that is `false` outside the `web` configuration, and the Android build ships no worker, manifest or icons. Initial bundle 544.39 kB, as before.
+- Verified in Chromium: the worker activates and controls the page, and after stopping the server the app reloaded and loaded demo receipts offline.
+- Hosting: needs HTTPS and a rewrite of unknown paths to `/index.html`, so a first visit to a deep link such as `/library` works before the worker is installed.
+- Web limits: no notification auto-capture, screenshot inbox only in Chromium (folder picker), data lives in browser storage (localStorage for item details, about 5 MB), and clearing site data erases it.
+- The icon is still Capacitor's default placeholder, the same one the Android launcher uses.
 
 ## Demo mode (November 20, 2026)
 
