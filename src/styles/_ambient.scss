@@ -1,5 +1,6 @@
 // Ambient backdrop: slow-drifting receipt and screenshot silhouettes over soft
-// brand light and a dotted "sorting table", with an occasional scan line.
+// brand light and a dotted "sorting table", under twinkling stars, with an
+// occasional comet streaking across.
 // Only transform and opacity animate, so it stays cheap on Android WebViews.
 
 .ambient {
@@ -37,19 +38,42 @@
   mask-image: radial-gradient(ellipse 80% 70% at 70% 20%, #000, transparent 75%);
 }
 
-.ambient-scan {
+// Four-point sparkle, the Starlog star.
+.ambient-star {
   position: absolute;
-  inset: 0;
-  opacity: 0;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  aspect-ratio: 1;
+  background: var(--sn-star);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  opacity: .7;
 }
-.ambient-scan::before {
+
+// A comet: bright head, fading tail, flying down-left across the top.
+.ambient-comet {
+  position: absolute;
+  top: 6%;
+  right: -10%;
+  width: 150px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--sn-star), transparent);
+  box-shadow: 0 0 14px 1px var(--sn-star-glow);
+  opacity: 0;
+  transform: rotate(-24deg);
+  transform-origin: left center;
+}
+.ambient-comet::before {
   content: '';
   position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(var(--ion-color-primary-rgb), .55) 30%, rgba(var(--ion-color-primary-rgb), .55) 70%, transparent);
-  box-shadow: 0 0 18px 2px rgba(var(--ion-color-primary-rgb), .25);
+  left: -3px;
+  top: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sn-star-head);
+  box-shadow: 0 0 10px 3px var(--sn-star-glow);
 }
 
 .drift {
@@ -104,17 +128,23 @@
   from { transform: translate3d(0, 0, 0) rotate(var(--r)) scale(var(--s, 1)); }
   to { transform: translate3d(var(--dx, 14px), -38px, 0) rotate(calc(var(--r) + 9deg)) scale(var(--s, 1)); }
 }
-@keyframes sn-ambient-scan {
-  0% { opacity: 0; transform: translate3d(0, 0, 0); }
-  6% { opacity: 1; }
-  44% { opacity: 1; }
-  50%, 100% { opacity: 0; transform: translate3d(0, 100%, 0); }
+@keyframes sn-twinkle {
+  0%, 100% { opacity: .3; transform: scale(.65) rotate(0); }
+  50% { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+// Rotated -24deg; moving along -x after the rotation sends it down-left.
+@keyframes sn-comet {
+  0% { opacity: 0; transform: rotate(-24deg) translate3d(0, 0, 0); }
+  4% { opacity: 1; }
+  18% { opacity: 0; transform: rotate(-24deg) translate3d(-115vw, 0, 0); }
+  100% { opacity: 0; transform: rotate(-24deg) translate3d(-115vw, 0, 0); }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .ambient-orb--a { animation: sn-orb-a 19s var(--sn-ease-in-out) infinite alternate; }
   .ambient-orb--b { animation: sn-orb-b 23s var(--sn-ease-in-out) infinite alternate; }
-  .ambient-scan { animation: sn-ambient-scan 11s var(--sn-ease-in-out) 2.4s infinite; }
+  .ambient-star { animation: sn-twinkle 4.6s var(--sn-ease-in-out) var(--delay, 0s) infinite; }
+  .ambient-comet { animation: sn-comet 13s cubic-bezier(.3, .1, .6, 1) 3s infinite; will-change: transform, opacity; }
   .drift {
     animation: sn-drift var(--d, 16s) var(--sn-ease-in-out) var(--delay, 0s) infinite alternate;
     will-change: transform;

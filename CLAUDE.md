@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-SnapSort: an offline-first Android organizer for receipt images and screenshots. Angular 22 + Ionic 9 + Capacitor 8. Everything runs on the device; there is no backend.
+Starlog (formerly SnapSort; internal IDs such as `app.snapsort.mobile`, storage keys and the backup format still say `snapsort` and must stay that way): an offline-first Android organizer for receipt images and screenshots. Angular 22 + Ionic 9 + Capacitor 8. Everything runs on the device; there is no backend.
 
 ## Commands
 

@@ -41,7 +41,7 @@ interface Column {
               <span class="drift-doc drift-doc--receipt"></span>
             </div>
             <h2>Your spending, at a glance</h2>
-            <p>Add receipts with an amount and SnapSort charts where your money goes each month. Everything is worked out on this device.</p>
+            <p>Add receipts with an amount and Starlog charts where your money goes each month. Everything is worked out on this device.</p>
             <ion-button routerLink="/add" size="large">Add a receipt</ion-button>
           </section>
         } @else if (insights(); as data) {

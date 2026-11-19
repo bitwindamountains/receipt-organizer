@@ -34,7 +34,7 @@ export class BackupService {
   async export(): Promise<ExportResult> {
     await this.store.load();
     const items = [...this.store.items()];
-    const fileName = `snapsort-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+    const fileName = `starlog-backup-${new Date().toISOString().slice(0, 10)}.zip`;
     const output = Capacitor.isNativePlatform() ? await this.nativeOutput(fileName) : this.browserOutput(fileName);
     const writer = createBackupWriter(output.write, APP_VERSION);
     const included: SavedItem[] = [];

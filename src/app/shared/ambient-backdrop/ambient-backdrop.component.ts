@@ -22,6 +22,16 @@ const HERO_DOCS: DriftDoc[] = [
   { kind: 'shot', x: 40, y: 72, rotate: 14, scale: .55, opacity: .25, duration: 22, delay: -15, dx: -14 },
 ];
 
+interface Star { x: number; y: number; size: number; delay: number; }
+
+// A loose constellation behind the slips; each twinkles on its own beat.
+const STARS: Star[] = [
+  { x: 14, y: 12, size: 12, delay: 0 }, { x: 32, y: 26, size: 7, delay: -1.6 }, { x: 52, y: 9, size: 9, delay: -3.1 },
+  { x: 71, y: 30, size: 14, delay: -.8 }, { x: 93, y: 16, size: 7, delay: -2.4 }, { x: 24, y: 44, size: 9, delay: -4.2 },
+  { x: 47, y: 38, size: 6, delay: -2 }, { x: 84, y: 52, size: 10, delay: -3.6 }, { x: 8, y: 30, size: 6, delay: -1.1 },
+  { x: 61, y: 60, size: 8, delay: -4.8 },
+];
+
 const FULL_DOCS: DriftDoc[] = [
   ...HERO_DOCS.map((doc) => ({ ...doc, y: doc.y * .55 })),
   { kind: 'receipt', x: 86, y: 62, rotate: 18, scale: .9, opacity: .45, duration: 20, delay: -4, dx: -10 },
@@ -30,7 +40,7 @@ const FULL_DOCS: DriftDoc[] = [
   { kind: 'shot', x: 12, y: 6, rotate: -14, scale: .7, opacity: .35, duration: 23, delay: -6, dx: 10 },
 ];
 
-/** Decorative, theme-aware background motion: drifting receipts and screenshots. */
+/** Decorative, theme-aware background motion: twinkling stars, drifting receipts and screenshots, and a passing comet. */
 @Component({
   selector: 'app-ambient-backdrop',
   host: {
@@ -43,6 +53,9 @@ const FULL_DOCS: DriftDoc[] = [
     <span class="ambient-orb ambient-orb--a"></span>
     <span class="ambient-orb ambient-orb--b"></span>
     <span class="ambient-grid"></span>
+    @for (star of stars; track $index) {
+      <span class="ambient-star" [style.--x.%]="star.x" [style.--y.%]="star.y" [style.--size.px]="star.size" [style.--delay.s]="star.delay"></span>
+    }
     @for (doc of docs(); track $index) {
       <span
         class="drift"
@@ -58,10 +71,11 @@ const FULL_DOCS: DriftDoc[] = [
         <span class="drift-doc" [class]="'drift-doc--' + doc.kind"></span>
       </span>
     }
-    <span class="ambient-scan"></span>
+    <span class="ambient-comet"></span>
   `,
 })
 export class AmbientBackdropComponent {
   readonly variant = input<'hero' | 'full'>('hero');
+  protected readonly stars = STARS;
   protected readonly docs = computed(() => (this.variant() === 'full' ? FULL_DOCS : HERO_DOCS));
 }

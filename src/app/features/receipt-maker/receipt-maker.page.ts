@@ -85,7 +85,7 @@ function todayKey(): string {
                 <strong class="num" [appReplay]="totals().total">{{ money(totals().total) }}</strong>
               </div>
               @if (notes().trim()) { <div class="rp-rule"></div><p class="rp-notes">{{ notes() }}</p> }
-              <p class="rp-footer">Made with SnapSort</p>
+              <p class="rp-footer">Made with Starlog</p>
             </div>
           </section>
 

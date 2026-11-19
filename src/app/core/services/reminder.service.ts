@@ -12,7 +12,7 @@ const MAX_SCHEDULED = 60;
 
 /**
  * Keeps on-device warranty reminders in step with the library (Android). Each sync
- * cancels SnapSort's pending reminders and schedules the current set, so edits and
+ * cancels Starlog's pending reminders and schedules the current set, so edits and
  * deletes never leave stale notifications. The browser build shows reminders in the
  * app only.
  */

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Android 12+: allowBackup="false" no longer stops device-to-device transfer, so every
      domain is excluded from both. Receipts and payment history move only through an
-     exported SnapSort backup. -->
+     exported Starlog backup. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" path="." />

@@ -49,6 +49,11 @@
   --sn-glow-a: rgba(38, 87, 75, .2);
   --sn-glow-b: rgba(217, 120, 61, .17);
   --sn-stage: #111916;
+  // Starlog: comet blue for stars and the night-sky logo tile.
+  --sn-star: #4a78d6;
+  --sn-star-head: #ffffff;
+  --sn-star-glow: rgba(74, 120, 214, .35);
+  --sn-night: linear-gradient(150deg, #2a5fb0 0%, #14305e 55%, #0b1830 100%);
   // Thermal Archive surfaces: paper grain over drifting brand light, never a flat fill.
   --sn-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .08 0 0 0 0 .12 0 0 0 0 .11 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --sn-mesh:
@@ -128,6 +133,8 @@
     --sn-glow-a: rgba(120, 201, 176, .15);
     --sn-glow-b: rgba(239, 154, 98, .11);
     --sn-stage: #050908;
+    --sn-star: #a9c7ff;
+    --sn-star-glow: rgba(140, 180, 255, .45);
     --sn-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     --sn-mesh:
       var(--sn-grain),

@@ -3,7 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonIcon, IonSearchbar } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { albumsOutline, arrowForward, chevronForward, flash, layers, receiptOutline, starOutline } from 'ionicons/icons';
+import { albumsOutline, arrowForward, chevronForward, flash, receiptOutline, starOutline } from 'ionicons/icons';
 import { ItemStore } from '../../core/services/item.store';
 import { CaptureService } from '../../core/capture/capture.service';
 import { SavedItem } from '../../core/models/saved-item';
@@ -12,18 +12,19 @@ import { daysLeftLabel, endingSoon } from '../../core/utils/warranty';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
 import { CountUpDirective } from '../../shared/count-up.directive';
 import { ItemCardComponent } from '../../shared/item-card/item-card.component';
+import { StarMarkComponent } from '../../shared/star-mark.component';
 import { ThumbComponent } from '../../shared/thumb.component';
 
 @Component({
   selector: 'app-home',
-  imports: [DatePipe, IonContent, IonSearchbar, IonButton, IonIcon, RouterLink, ItemCardComponent, AmbientBackdropComponent, CountUpDirective, ThumbComponent],
+  imports: [DatePipe, IonContent, IonSearchbar, IonButton, IonIcon, RouterLink, ItemCardComponent, AmbientBackdropComponent, CountUpDirective, ThumbComponent, StarMarkComponent],
   template: `
     <ion-content [fullscreen]="true">
       <app-ambient-backdrop class="home-ambient" />
       <main class="page-width content-pad home">
         <div class="brand-row reveal">
-          <span class="brand-mark" aria-hidden="true"><ion-icon name="layers" /></span>
-          <span class="brand-name">SnapSort</span>
+          <span class="brand-mark"><app-star-mark /></span>
+          <span class="brand-name">Starlog</span>
         </div>
 
         <section class="hero">
@@ -208,7 +209,7 @@ export class HomePage implements OnInit {
   });
 
   constructor() {
-    addIcons({ albumsOutline, arrowForward, chevronForward, flash, layers, receiptOutline, starOutline });
+    addIcons({ albumsOutline, arrowForward, chevronForward, flash, receiptOutline, starOutline });
   }
 
   ngOnInit(): void {
