@@ -17,20 +17,21 @@ interface DemoSeed {
   warrantyDays?: number;
 }
 
+// Made-up merchants: demo screens end up in store screenshots, so no real brands.
 // Spread over five months so Home, Library months and the Insights chart all have something to show.
 const SEEDS: DemoSeed[] = [
   { daysAgo: 0, merchant: 'Corner Cafe', category: 'Food', lines: [['Iced latte', 2, 165], ['Ensaymada', 1, 85]], payment: 'GCash', favorite: true },
-  { daysAgo: 2, merchant: 'Meralco', category: 'Bills', lines: [['Electricity bill', 1, 2845.5]], payment: 'Maya' },
-  { daysAgo: 4, merchant: 'Grab', category: 'Transport', lines: [['Ride to Makati', 1, 312]], payment: 'GCash' },
+  { daysAgo: 2, merchant: 'Luzon Power Co.', category: 'Bills', lines: [['Electricity bill', 1, 2845.5]], payment: 'Maya' },
+  { daysAgo: 4, merchant: 'RideNow', category: 'Transport', lines: [['Ride to Makati', 1, 312]], payment: 'GCash' },
   { daysAgo: 6, merchant: 'Lola Nena Bakeshop', category: 'Sales', lines: [['Ube cheese pandesal (dozen)', 3, 180], ['Delivery', 1, 60]], payment: 'Cash', sold: true },
-  { daysAgo: 9, merchant: 'SM Supermarket', category: 'Shopping', lines: [['Groceries', 1, 1987.25]], payment: 'Card' },
+  { daysAgo: 9, merchant: 'Masagana Supermarket', category: 'Shopping', lines: [['Groceries', 1, 1987.25]], payment: 'Card' },
   { daysAgo: 21, merchant: 'Gadget Hub', category: 'Electronics', lines: [['Wireless earbuds', 1, 2499]], payment: 'Card', favorite: true, warrantyDays: 5 },
-  { daysAgo: 35, merchant: 'Jollibee', category: 'Food', lines: [['Chickenjoy bucket', 1, 599], ['Peach mango pie', 3, 45]], payment: 'Cash' },
-  { daysAgo: 40, merchant: 'PLDT', category: 'Bills', lines: [['Fiber internet', 1, 1699]], payment: 'GCash' },
-  { daysAgo: 58, merchant: 'Cebu Pacific', category: 'Travel', lines: [['MNL–CEB round trip', 1, 4210]], payment: 'Card' },
-  { daysAgo: 70, merchant: 'Mercury Drug', category: 'Shopping', lines: [['Vitamins', 1, 640], ['Paracetamol', 2, 38]], payment: 'Cash' },
-  { daysAgo: 96, merchant: 'Power Mac Center', category: 'Electronics', lines: [['USB-C charger', 1, 1890]], payment: 'Card', warrantyDays: 270 },
-  { daysAgo: 125, merchant: 'National Book Store', category: 'School', lines: [['Notebooks', 4, 55], ['Ballpens', 6, 15]], payment: 'Cash' },
+  { daysAgo: 35, merchant: 'Bida Chicken House', category: 'Food', lines: [['Fried chicken bucket', 1, 599], ['Mango pie', 3, 45]], payment: 'Cash' },
+  { daysAgo: 40, merchant: 'Bayan Fiber', category: 'Bills', lines: [['Fiber internet', 1, 1699]], payment: 'GCash' },
+  { daysAgo: 58, merchant: 'Isla Air', category: 'Travel', lines: [['MNL–CEB round trip', 1, 4210]], payment: 'Card' },
+  { daysAgo: 70, merchant: 'Botika Plus', category: 'Shopping', lines: [['Vitamins', 1, 640], ['Paracetamol', 2, 38]], payment: 'Cash' },
+  { daysAgo: 96, merchant: 'Tech Corner', category: 'Electronics', lines: [['USB-C charger', 1, 1890]], payment: 'Card', warrantyDays: 270 },
+  { daysAgo: 125, merchant: 'Pahina Bookstore', category: 'School', lines: [['Notebooks', 4, 55], ['Ballpens', 6, 15]], payment: 'Cash' },
 ];
 
 export interface DemoEntry {

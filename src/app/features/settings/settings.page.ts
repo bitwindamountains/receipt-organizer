@@ -144,7 +144,8 @@ import { DemoService } from '../../core/demo/demo.service';
 
         <p class="group-title">Privacy controls</p>
         <ion-list inset="true" class="reveal" style="--i: 3">
-          <ion-item button lines="none" (click)="confirmErase()" [detail]="false">
+          <!-- Disabled mid demo load: the load would keep saving receipts after the erase. -->
+          <ion-item button lines="none" [disabled]="demo.busy()" (click)="confirmErase()" [detail]="false">
             <ion-icon slot="start" color="danger" name="trash-outline" aria-hidden="true" />
             <ion-label color="danger">Erase all SnapSort data</ion-label>
           </ion-item>
