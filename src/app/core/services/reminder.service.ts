@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
 import { SavedItem } from '../models/saved-item';
 import { remindersFor } from '../utils/warranty';
+import { DEMO_TAG } from '../demo/demo-data';
 import { ItemStore } from './item.store';
 
 const SOURCE = 'snapsort-warranty';
@@ -49,6 +50,7 @@ export class ReminderService {
     const ours = pending.notifications.filter((notification) => notification.extra?.source === SOURCE);
     if (ours.length) await LocalNotifications.cancel({ notifications: ours.map(({ id }) => ({ id })) });
     const reminders = items
+      .filter((item) => !item.tags.includes(DEMO_TAG)) // sample receipts must not send real notifications
       .flatMap((item) => remindersFor(item))
       .sort((a, b) => a.at.getTime() - b.at.getTime())
       .slice(0, MAX_SCHEDULED);

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { IonButton, IonContent, IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { checkmarkCircle, lockClosedOutline, pricetagOutline, searchOutline } from 'ionicons/icons';
+import { DemoService } from '../../core/demo/demo.service';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
 
 @Component({
@@ -49,7 +50,7 @@ import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-
 
         <div class="actions reveal" style="--i: 8">
           <ion-button expand="block" size="large" (click)="complete('/add')">Add my first image</ion-button>
-          <ion-button expand="block" fill="clear" color="medium" (click)="complete('/home')">Explore the app</ion-button>
+          <ion-button expand="block" fill="clear" color="medium" (click)="explore()">Explore with demo receipts</ion-button>
         </div>
       </main>
     </ion-content>
@@ -57,9 +58,16 @@ import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-
 })
 export class OnboardingPage {
   private readonly router = inject(Router);
+  private readonly demo = inject(DemoService);
 
   constructor() {
     addIcons({ checkmarkCircle, lockClosedOutline, pricetagOutline, searchOutline });
+  }
+
+  explore(): void {
+    // Home fills in as each demo receipt is saved; on failure the user just lands on an empty library.
+    void this.demo.load().catch(() => undefined);
+    this.complete('/home');
   }
 
   complete(destination: string): void {

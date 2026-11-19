@@ -15,7 +15,7 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, albumsOutline, close, cloudOfflineOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline } from 'ionicons/icons';
+import { add, albumsOutline, close, cloudOfflineOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline } from 'ionicons/icons';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
@@ -24,6 +24,7 @@ import { CaptureService } from '../../core/capture/capture.service';
 import { BusinessProfileStore } from '../../core/receipts/business-profile.store';
 import { APP_VERSION, BackupService } from '../../core/backup/backup.service';
 import { BackupError } from '../../core/backup/backup-format';
+import { DemoService } from '../../core/demo/demo.service';
 
 @Component({
   selector: 'app-settings',
@@ -118,6 +119,14 @@ import { BackupError } from '../../core/backup/backup-format';
             <ion-icon slot="start" name="images-outline" aria-hidden="true" />
             <ion-label><h3>Storage</h3><p>{{ store.items().length }} saved {{ store.items().length === 1 ? 'item' : 'items' }}</p></ion-label>
           </ion-item>
+          <ion-item lines="full" button [detail]="false" [disabled]="demo.busy()" (click)="toggleDemo()">
+            <ion-icon slot="start" name="receipt-outline" aria-hidden="true" />
+            @if (demo.active()) {
+              <ion-label><h3>Remove demo receipts</h3><p>Deletes the {{ demo.items().length }} sample receipts. Your own items stay.</p></ion-label>
+            } @else {
+              <ion-label><h3>Load demo receipts</h3><p>Adds a few months of sample receipts to try search, insights, and reminders. Remove them here anytime.</p></ion-label>
+            }
+          </ion-item>
           <ion-item lines="full" button [detail]="false" [disabled]="backupBusy()" (click)="exportBackup()">
             <ion-icon slot="start" name="download-outline" aria-hidden="true" />
             <ion-label><h3>Export backup</h3><p>Uninstalling SnapSort deletes its data. Save a backup somewhere else to keep a copy.</p></ion-label>
@@ -160,9 +169,10 @@ export class SettingsPage {
   protected readonly backupBusy = signal(false);
   protected readonly appVersion = APP_VERSION;
   private readonly backup = inject(BackupService);
+  protected readonly demo = inject(DemoService);
 
   constructor() {
-    addIcons({ add, albumsOutline, close, cloudOfflineOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, sparklesOutline, trashOutline });
+    addIcons({ add, albumsOutline, close, cloudOfflineOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline });
     void this.store.load();
   }
 
@@ -223,6 +233,16 @@ export class SettingsPage {
       return;
     }
     this.categories.remove(name);
+  }
+
+  async toggleDemo(): Promise<void> {
+    const removing = this.demo.active();
+    try {
+      await (removing ? this.demo.remove() : this.demo.load());
+      await this.notify(removing ? 'Demo receipts removed' : 'Demo receipts added. Have a look around.');
+    } catch {
+      await this.notify(removing ? 'Some demo receipts could not be removed. Try again.' : 'Demo receipts could not be added. Check free space and try again.');
+    }
   }
 
   async exportBackup(): Promise<void> {
