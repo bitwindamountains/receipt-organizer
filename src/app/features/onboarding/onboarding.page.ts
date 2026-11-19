@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { IonButton, IonContent, IonIcon } from '@ionic/angular';
+import { IonButton, IonContent, IonIcon, ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { checkmarkCircle, lockClosedOutline, pricetagOutline, searchOutline } from 'ionicons/icons';
 import { DemoService } from '../../core/demo/demo.service';
@@ -59,14 +59,18 @@ import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-
 export class OnboardingPage {
   private readonly router = inject(Router);
   private readonly demo = inject(DemoService);
+  private readonly toasts = inject(ToastController);
 
   constructor() {
     addIcons({ checkmarkCircle, lockClosedOutline, pricetagOutline, searchOutline });
   }
 
   explore(): void {
-    // Home fills in as each demo receipt is saved; on failure the user just lands on an empty library.
-    void this.demo.load().catch(() => undefined);
+    // Home fills in as each demo receipt is saved.
+    void this.demo.load().catch(async () => {
+      const toast = await this.toasts.create({ message: 'Demo receipts could not be added. Try again from Settings.', duration: 3000 });
+      await toast.present();
+    });
     this.complete('/home');
   }
 

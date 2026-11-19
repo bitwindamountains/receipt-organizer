@@ -2,8 +2,8 @@ import { NewSavedItem } from '../models/saved-item';
 import { ReceiptDraft, ReceiptLine, receiptNotes, receiptTotals } from '../receipts/receipt-draft';
 import { localDateKey } from '../utils/item-display';
 
-/** Tag on every demo item; "Remove demo data" deletes exactly the items carrying it. */
-export const DEMO_TAG = 'demo';
+/** Tag on every demo item; "Remove demo receipts" deletes exactly the items carrying it. Specific so a user's own "demo" tag is never caught. */
+export const DEMO_TAG = 'demo receipt';
 
 interface DemoSeed {
   daysAgo: number;

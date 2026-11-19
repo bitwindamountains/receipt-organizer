@@ -22,12 +22,21 @@ export class DemoService {
     try {
       await this.store.load();
       if (this.active()) return;
-      // Oldest first, so the newest demo receipt ends up on top of the library.
-      for (const { draft, item } of demoEntries().reverse()) {
-        this.categories.add(item.category); // no-op for existing categories
-        const imageKey = `images/${crypto.randomUUID()}.png`;
-        await this.images.store(imageKey, await renderReceipt(draft));
-        await this.store.create({ ...item, imageKey });
+      try {
+        // Oldest first, so the newest demo receipt ends up on top of the library.
+        for (const { draft, item } of demoEntries().reverse()) {
+          this.categories.add(item.category); // no-op for existing categories
+          const imageKey = `images/${crypto.randomUUID()}.png`;
+          await this.images.store(imageKey, await renderReceipt(draft));
+          await this.store.create({ ...item, imageKey }).catch(async (error: unknown) => {
+            await this.images.remove(imageKey);
+            throw error;
+          });
+        }
+      } catch (error) {
+        // All or nothing: a half-loaded demo would turn the button into "Remove" with no way to finish.
+        await this.removeAll();
+        throw error;
       }
     } finally {
       this.busy.set(false);
@@ -38,12 +47,16 @@ export class DemoService {
     if (this.busy()) return;
     this.busy.set(true);
     try {
-      for (const item of this.items()) {
-        await this.store.delete(item.id);
-        await this.images.remove(item.imageKey);
-      }
+      await this.removeAll();
     } finally {
       this.busy.set(false);
+    }
+  }
+
+  private async removeAll(): Promise<void> {
+    for (const item of this.items()) {
+      await this.store.delete(item.id);
+      await this.images.remove(item.imageKey);
     }
   }
 }
