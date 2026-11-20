@@ -41,11 +41,22 @@ ion-button[fill='solid']:not([color]), ion-button:not([fill]):not([color]) { --b
 ion-toast { --background: #15201d; --color: #f2f5f3; --button-color: #78c9b0; --border-radius: 16px; --box-shadow: var(--sn-shadow-3); --start: 16px; --end: 16px; font-weight: 600; }
 ion-toast::part(button) { min-height: 48px; font-weight: 800; text-transform: none; letter-spacing: 0; }
 // Material dialogs shout in caps; the app's buttons are sentence case.
-ion-alert .alert-button { text-transform: none; letter-spacing: 0; }
+ion-alert .alert-button-group .alert-button { text-transform: none; letter-spacing: 0; }
 // Destructive alert buttons (Discard, Erase everything) must not look like Cancel.
-ion-alert .alert-button.alert-danger { color: var(--ion-color-danger); font-weight: 800; }
+ion-alert .alert-button.alert-danger { color: var(--sn-danger-ink); font-weight: 800; }
 ion-alert .alert-wrapper { border-radius: var(--sn-radius-lg) !important; }
 ion-popover { --border-radius: var(--sn-radius-md); --box-shadow: var(--sn-shadow-3); }
+ion-alert .alert-message { color: var(--ion-color-medium); }
+// Choice labels in select dialogs: Ionic's #737373 is 4.4:1 on the cream surface. The group class outranks its scoped rule.
+ion-alert .alert-radio-group .alert-radio-label, ion-alert .alert-checkbox-group .alert-checkbox-label { color: var(--ion-text-color); }
+// Dark: dialogs, toasts and menus sat on the page colour itself (#0c1311 on #0c1311) and had no edge.
+// A raised surface plus a hairline keeps them distinct; every text colour on it stays 5:1 or better.
+@media (prefers-color-scheme: dark) {
+  ion-alert[class] { --background: #22302c; } // [class]: outranks Ionic's scoped :host rule that sets --background
+  ion-alert .alert-wrapper { border: 1px solid var(--sn-border-strong); }
+  ion-toast { --background: #22302c; --border-width: 1px; --border-style: solid; --border-color: var(--sn-border-strong); }
+  ion-popover[class] { --background: #22302c; }
+}
 
 .page-width { width: min(100%, 920px); margin-inline: auto; }
 .content-pad { padding: 18px 18px calc(108px + var(--ion-safe-area-bottom)); }

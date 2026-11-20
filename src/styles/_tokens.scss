@@ -52,6 +52,8 @@
   --sn-glow-b: rgba(217, 120, 61, .17);
   --sn-stage: #111916;
   // Starlog: stars and comets in jade, a lighter step of the brand green; the logo tile is a deep-green night sky.
+  // Error text: Ionic's danger shade is tuned for light surfaces.
+  --sn-danger-ink: var(--ion-color-danger-shade);
   --sn-star: #3f9a7e;
   --sn-star-head: #f2fff9;
   --sn-star-glow: rgba(63, 154, 126, .32);
@@ -94,6 +96,8 @@
   :root,
   :root body {
     --ion-color-primary: #78c9b0;
+    // #d5434d was 4.2:1 on the dark page; this is 6:1 or better, including on the tinted error box.
+    --sn-danger-ink: #ff6b74;
     --ion-color-primary-rgb: 120, 201, 176;
     --ion-color-primary-contrast: #06201a;
     --ion-color-primary-contrast-rgb: 6, 32, 26;

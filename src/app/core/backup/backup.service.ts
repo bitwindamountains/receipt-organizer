@@ -9,7 +9,7 @@ import { ItemStore } from '../services/item.store';
 import { localDateKey } from '../utils/item-display';
 import { BackupError, createBackupWriter, isBackupEntry, parseCategories, parseItems, parseManifest, readBackup, sha256 } from './backup-format';
 
-export const APP_VERSION = '0.4.4';
+export const APP_VERSION = '0.4.5';
 const BACKUP_DIR = 'backups';
 
 export interface ExportResult {

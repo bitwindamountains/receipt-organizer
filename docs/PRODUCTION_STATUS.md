@@ -5,7 +5,7 @@ Updated: November 20, 2026 - renamed to Starlog, UI review fixes, installable we
 ## Where things stand (end of November 20, 2026)
 
 - **`main`** has everything through PR #6: demo mode (#4), PWA web build (#5), Starlog rename, green star look and UI review fixes (#6). `npm run check`: 65 tests pass, initial bundle 547 kB.
-- **Android:** 0.4.4 (`versionCode 8`) is signed with the upload key (`android/starlog-upload.jks`, alias `upload`, outside git; back it up). `bundleRelease` gives a signed AAB for Play; `assembleRelease` a signed APK. Not yet tested on a phone. JDK is now 21.0.13 (path in CLAUDE.md).
+- **Android:** 0.4.5 (`versionCode 9`) is signed with the upload key (`android/starlog-upload.jks`, alias `upload`, outside git; back it up). `bundleRelease` gives a signed AAB for Play; `assembleRelease` a signed APK. Not yet tested on a phone. JDK is now 21.0.13 (path in CLAUDE.md).
 - **Web (Netlify):** site `starlog-receipts` at https://starlog-receipts.netlify.app (renamed from `snapsort-receipts`; the old address is gone) holds the current Starlog build, uploaded by hand (`netlify deploy --prod --no-build --dir dist/snapsort/browser`), not linked to GitHub. `netlify.toml` (build command, Node 24.15.0, SPA rewrite) is on `main`. The web app reloads itself when a newer deploy is ready. Public (no Netlify login) since November 21, 2026.
 - **CI:** GitHub Actions has never run on this repo, so PRs #4-#6 were merged on local checks only. Check Settings > Actions (likely an account or billing setting).
 - **Next:** merge `netlify`, rebuild and redeploy the web version; build a debug APK and check the new icon, splash and name on a phone; check "Starlog" on the Play Store and for trademarks; then the release blockers below.

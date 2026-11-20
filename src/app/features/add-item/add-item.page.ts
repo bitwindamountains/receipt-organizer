@@ -12,7 +12,6 @@ import {
   IonIcon,
   IonInput,
   IonItem,
-  IonNote,
   IonSelect,
   IonSelectOption,
   IonSpinner,
@@ -47,7 +46,7 @@ const MAX_IMAGES = 10;
 @Component({
   selector: 'app-add-item',
   host: { '(document:paste)': 'onPaste($event)' },
-  imports: [ReactiveFormsModule, RouterLink, ReplayAnimationDirective, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonFooter, IonButton, IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption, IonNote, IonSpinner],
+  imports: [ReactiveFormsModule, RouterLink, ReplayAnimationDirective, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonFooter, IonButton, IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar>
@@ -161,13 +160,13 @@ const MAX_IMAGES = 10;
                   <ion-select-option value="expense">I paid (counts as spending)</ion-select-option>
                   <ion-select-option value="income">I received (money in)</ion-select-option>
                 </ion-select>
-                @if (formValue().category === transfers) { <ion-note slot="helper">Transfers aren't counted as spending; Insights shows them on their own.</ion-note> }
               </ion-item>
+              <!-- ion-item no longer renders slot="helper" notes (they measured 0x0); plain text under the field instead. -->
+              @if (formValue().category === transfers) { <p class="field-help" animate.enter="enter-fade">Transfers aren't counted as spending; Insights shows them on their own.</p> }
               <ion-item [class.auto-filled]="filled().has('purchaseDate')"><ion-input formControlName="purchaseDate" label="Purchase date (optional)" labelPlacement="stacked" type="date" /></ion-item>
               @if (showWarranty() || formValue().warrantyUntil) {
                 <ion-item lines="none" animate.enter="enter-expand">
-                  <ion-input formControlName="warrantyUntil" label="Warranty or return until (optional)" labelPlacement="stacked" type="date" />
-                  <ion-note slot="helper">We'll remind you a week before it ends</ion-note>
+                  <ion-input formControlName="warrantyUntil" label="Warranty or return until (optional)" labelPlacement="stacked" type="date" helperText="We'll remind you a week before it ends" />
                 </ion-item>
               } @else {
                 <button type="button" class="line-add form-add-field" (click)="showWarranty.set(true)"><ion-icon name="add" aria-hidden="true" /> Add a warranty or return date</button>
@@ -182,7 +181,7 @@ const MAX_IMAGES = 10;
               </ion-select>
             </ion-item>
             <ion-item><ion-input formControlName="title" label="Title (optional)" labelPlacement="stacked" placeholder="What will help you recognize it?" [maxlength]="120" /></ion-item>
-            <ion-item><ion-input formControlName="tags" label="Tags (optional)" labelPlacement="stacked" placeholder="warranty, laptop, work" /><ion-note slot="helper">Separate tags with commas</ion-note></ion-item>
+            <ion-item><ion-input formControlName="tags" label="Tags (optional)" labelPlacement="stacked" placeholder="warranty, laptop, work" helperText="Separate tags with commas" /></ion-item>
             <ion-item lines="none"><ion-textarea formControlName="notes" label="Notes (optional)" labelPlacement="stacked" [autoGrow]="true" [maxlength]="1000" /></ion-item>
           </div>
 
