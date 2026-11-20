@@ -15,13 +15,14 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { close, createOutline, expandOutline, shareOutline, shieldCheckmark, shieldOutline, trashOutline, star, starOutline } from 'ionicons/icons';
+import { close, createOutline, downloadOutline, expandOutline, shareOutline, shieldCheckmark, shieldOutline, trashOutline, star, starOutline } from 'ionicons/icons';
 import { map } from 'rxjs';
 import { SavedItem } from '../../core/models/saved-item';
 import { ImageStorageService } from '../../core/services/image-storage.service';
 import { injectImageUrl } from '../../core/services/image-url';
 import { ItemStore } from '../../core/services/item.store';
-import { displayTitle, formatAmount } from '../../core/utils/item-display';
+import { TRANSFERS, displayTitle, formatAmount } from '../../core/utils/item-display';
+import { Capacitor } from '@capacitor/core';
 import { daysLeftLabel, warrantyStatus } from '../../core/utils/warranty';
 import { injectGoBack } from '../../core/utils/navigation';
 
@@ -31,9 +32,9 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
   selector: 'app-item-details',
   imports: [DatePipe, RouterLink, IonHeader, IonToolbar, IonButtons, IonBackButton, IonContent, IonButton, IonIcon, IonSpinner],
   template: `
-    <ion-header class="ion-no-border detail-header">
+    <ion-header class="ion-no-border detail-header" [class.is-scrolled]="scrolled()">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="" aria-label="Back" /></ion-buttons>
         @if (item(); as current) {
           <ion-buttons slot="end">
             <ion-button class="fav-button" (click)="toggleFavorite(current)" [attr.aria-label]="current.isFavorite ? 'Remove from favorites' : 'Add to favorites'" [attr.aria-pressed]="current.isFavorite">
@@ -48,7 +49,7 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
       </ion-toolbar>
     </ion-header>
 
-    <ion-content [fullscreen]="true" class="detail-content">
+    <ion-content [fullscreen]="true" class="detail-content" [scrollEvents]="true" (ionScroll)="scrolled.set($event.detail.scrollTop > 160)">
       @if (!store.ready()) {
         <div class="detail-loading"><ion-spinner name="crescent" /></div>
       } @else if (item(); as current) {
@@ -62,13 +63,13 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 
         <main class="sheet">
           <div class="sheet-inner">
-            <p class="eyebrow reveal">{{ current.type === 'receipt' ? 'Receipt' : 'Screenshot' }} · {{ current.category }}</p>
             <h1 class="reveal" style="--i: 1">{{ displayTitle(current) }}</h1>
 
             @if (current.type === 'receipt' && (current.merchant || formatAmount(current) || current.purchaseDate)) {
               <section class="detail-slip reveal" style="--i: 2" aria-label="Receipt summary">
                 <div class="slip-head">
-                  <span>{{ current.merchant || 'Receipt' }}</span>
+                  <!-- The title already names the store; say how the money counts instead. -->
+                  <span>{{ moneyKind(current) }}</span>
                   @if (current.purchaseDate) { <span>{{ current.purchaseDate | date: 'mediumDate' }}</span> }
                 </div>
                 @if (formatAmount(current); as amount) {
@@ -100,7 +101,7 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
             </dl>
 
             <div class="detail-actions reveal" style="--i: 4">
-              <ion-button expand="block" (click)="share(current)"><ion-icon slot="start" name="share-outline" />Share</ion-button>
+              <ion-button expand="block" (click)="share(current)"><ion-icon slot="start" [name]="canShare ? 'share-outline' : 'download-outline'" />{{ canShare ? 'Share' : 'Download' }}</ion-button>
               <ion-button expand="block" fill="outline" [routerLink]="['/item', current.id, 'edit']"><ion-icon slot="start" name="create-outline" />Edit details</ion-button>
               <ion-button expand="block" fill="clear" color="danger" (click)="confirmDelete(current)"><ion-icon slot="start" name="trash-outline" />Delete</ion-button>
             </div>
@@ -163,11 +164,20 @@ export class ItemDetailsPage implements OnInit {
   private burstTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
-    addIcons({ close, createOutline, expandOutline, shareOutline, shieldCheckmark, shieldOutline, trashOutline, star, starOutline });
+    addIcons({ close, createOutline, downloadOutline, expandOutline, shareOutline, shieldCheckmark, shieldOutline, trashOutline, star, starOutline });
   }
 
   ngOnInit(): void {
     void this.store.load();
+  }
+
+  /** Web browsers without file sharing get a download instead (see ImageStorageService.share). */
+  protected readonly canShare = Capacitor.isNativePlatform() || typeof navigator.canShare === 'function';
+  protected readonly scrolled = signal(false);
+
+  protected moneyKind(item: SavedItem): string {
+    if (item.flow === 'income') return 'Received';
+    return item.category === TRANSFERS ? 'Transfer' : 'Spent';
   }
 
   async share(item: SavedItem): Promise<void> {
@@ -231,7 +241,8 @@ export class ItemDetailsPage implements OnInit {
     let undone = false;
     const toast = await this.toastController.create({
       message: 'Item deleted',
-      duration: 5000,
+      // Long enough to notice, read and reach (5 s was missed in testing).
+      duration: 10000,
       buttons: [{ text: 'Undo', handler: () => { undone = true; void this.store.restore(item); } }],
     });
     await toast.present();

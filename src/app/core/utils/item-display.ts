@@ -75,6 +75,28 @@ export function merchantSuggestions(items: SavedItem[], typed: string, limit = 4
     .map(([, entry]) => entry.name);
 }
 
+/** Money sent to people or other accounts: neither spending nor income. */
+export const TRANSFERS = 'Transfers';
+
+/** A receipt that adds to spending totals: has an amount, isn't money in, and isn't a transfer. */
+export function countsAsSpending(item: SavedItem): boolean {
+  return item.type === 'receipt' && item.flow !== 'income' && item.category !== TRANSFERS && item.amountMinor !== null && Boolean(item.currencyCode);
+}
+
+/** A receipt that still needs an amount or a date before it can count anywhere. */
+export function needsDetails(item: SavedItem): boolean {
+  return item.type === 'receipt' && (item.amountMinor === null || !item.purchaseDate);
+}
+
+/** Money received among these items, in their most-used currency, e.g. "+₱600.00"; null when none. */
+export function receivedTotal(items: SavedItem[]): string | null {
+  const income = items.filter((item) => item.type === 'receipt' && item.flow === 'income' && item.amountMinor !== null && item.currencyCode);
+  if (!income.length) return null;
+  const currency = income[0].currencyCode!;
+  const minor = income.filter((item) => item.currencyCode === currency).reduce((total, item) => total + item.amountMinor!, 0);
+  return `+${formatMinor(minor, currency)}`;
+}
+
 export interface ReceiptTotal {
   total: string;
   count: number;
@@ -92,11 +114,11 @@ export interface MonthlyReceiptSummary extends ReceiptTotal {
 export function receiptTotal(items: SavedItem[]): ReceiptTotal | null {
   const totals = new Map<string, { minor: number; count: number }>();
   for (const item of items) {
-    if (item.type !== 'receipt' || item.flow === 'income' || item.amountMinor === null || !item.currencyCode) continue;
-    const total = totals.get(item.currencyCode) ?? { minor: 0, count: 0 };
-    total.minor += item.amountMinor;
+    if (!countsAsSpending(item)) continue;
+    const total = totals.get(item.currencyCode!) ?? { minor: 0, count: 0 };
+    total.minor += item.amountMinor!;
     total.count += 1;
-    totals.set(item.currencyCode, total);
+    totals.set(item.currencyCode!, total);
   }
   const [top] = [...totals].sort(([, a], [, b]) => b.count - a.count || b.minor - a.minor);
   if (!top) return null;

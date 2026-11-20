@@ -180,7 +180,12 @@ export class CaptureService {
     const amount = new Intl.NumberFormat(undefined, { style: 'currency', currency: first.currencyCode ?? 'PHP' }).format((first.amountMinor ?? 0) / 100);
     // The toast is a courtesy; it must not keep saved payments from being acknowledged.
     void this.toasts
-      .create({ message: added.length === 1 ? `Captured ${amount}: ${first.title}` : `Captured ${added.length} payments`, duration: 2600, icon: 'flash' })
+      .create({
+        message: added.length === 1 ? `Captured ${amount}: ${first.title}` : `Captured ${added.length} payments`,
+        duration: 6000,
+        icon: 'flash',
+        buttons: [{ text: 'View', handler: () => void this.router.navigateByUrl(added.length === 1 ? `/item/${first.id}` : '/library?q=auto-captured') }],
+      })
       .then((toast) => toast.present())
       .catch(() => undefined);
     return handled;

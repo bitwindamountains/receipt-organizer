@@ -3,11 +3,11 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonIcon, IonSearchbar } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { albumsOutline, arrowForward, chevronForward, flash, receiptOutline, starOutline } from 'ionicons/icons';
+import { albumsOutline, arrowForward, chevronForward, createOutline, flash, receiptOutline, starOutline } from 'ionicons/icons';
 import { ItemStore } from '../../core/services/item.store';
 import { CaptureService } from '../../core/capture/capture.service';
 import { SavedItem } from '../../core/models/saved-item';
-import { displayTitle, monthlyReceiptSummary, receiptTotal } from '../../core/utils/item-display';
+import { displayTitle, monthlyReceiptSummary, needsDetails, receiptTotal } from '../../core/utils/item-display';
 import { daysLeftLabel, endingSoon } from '../../core/utils/warranty';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
 import { CountUpDirective } from '../../shared/count-up.directive';
@@ -36,12 +36,7 @@ import { ThumbComponent } from '../../shared/thumb.component';
               }
             </div>
           }
-          <p class="eyebrow reveal" style="--i: 1">{{ greeting() }}</p>
-          <h1 class="reveal" style="--i: 2">
-            Find anything
-            @if (store.recent()[0]; as latest) { <app-thumb class="inline-thumb" [imageKey]="latest.imageKey" /> }
-            you saved.
-          </h1>
+          <h1 class="reveal" style="--i: 1">Find anything you saved.</h1>
           <ion-searchbar
             class="sn-search reveal"
             style="--i: 3"
@@ -102,9 +97,10 @@ import { ThumbComponent } from '../../shared/thumb.component';
               <span class="stat-icon"><ion-icon name="albums-outline" aria-hidden="true" /></span>
               <span><strong class="stat-value num" [appCountUp]="store.items().length"></strong><span class="stat-label">All items</span></span>
             </button>
-            <button class="stat-tile stat-tile--accent reveal" style="--i: 5" (click)="openLibrary('receipt')">
-              <span class="stat-icon"><ion-icon name="receipt-outline" aria-hidden="true" /></span>
-              <span><strong class="stat-value num" [appCountUp]="receiptCount()"></strong><span class="stat-label">Receipts</span></span>
+            <!-- "Receipts" usually equalled "All items"; this count is a to-do instead. -->
+            <button class="stat-tile stat-tile--accent reveal" style="--i: 5" (click)="openNeedsDetails()">
+              <span class="stat-icon"><ion-icon name="create-outline" aria-hidden="true" /></span>
+              <span><strong class="stat-value num" [appCountUp]="needsDetailsCount()"></strong><span class="stat-label">Needs details</span></span>
             </button>
             <button class="stat-tile stat-tile--gold reveal" style="--i: 6" (click)="openLibrary(undefined, true)">
               <span class="stat-icon"><ion-icon name="star-outline" aria-hidden="true" /></span>
@@ -160,7 +156,6 @@ import { ThumbComponent } from '../../shared/thumb.component';
 
           @if (ending().length) {
             <section class="ending-soon reveal" style="--i: 7" aria-labelledby="ending-title">
-              <p class="eyebrow">Heads up</p>
               <h2 id="ending-title">Warranties ending soon</h2>
               <div class="ending-list">
                 @for (entry of ending(); track entry.item.id; let i = $index) {
@@ -188,7 +183,7 @@ import { ThumbComponent } from '../../shared/thumb.component';
           </section>
 
           <section class="section-heading">
-            <div><p class="eyebrow">Recent</p><h2>Saved lately</h2></div>
+            <h2>Saved lately</h2>
             <ion-button fill="clear" routerLink="/library">See all <ion-icon slot="end" name="arrow-forward" /></ion-button>
           </section>
           <section class="item-grid" aria-label="Recently saved items">
@@ -206,7 +201,7 @@ export class HomePage implements OnInit {
   protected readonly capture = inject(CaptureService);
   private readonly router = inject(Router);
   protected readonly query = signal('');
-  protected readonly receiptCount = computed(() => this.store.items().filter((item) => item.type === 'receipt').length);
+  protected readonly needsDetailsCount = computed(() => this.store.items().filter(needsDetails).length);
   protected readonly monthSummary = computed(() => monthlyReceiptSummary(this.store.items()));
   protected readonly allTime = computed(() => receiptTotal(this.store.items()));
   protected readonly ending = computed(() => endingSoon(this.store.items()).slice(0, 4));
@@ -219,7 +214,7 @@ export class HomePage implements OnInit {
   });
 
   constructor() {
-    addIcons({ albumsOutline, arrowForward, chevronForward, flash, receiptOutline, starOutline });
+    addIcons({ albumsOutline, arrowForward, chevronForward, createOutline, flash, receiptOutline, starOutline });
   }
 
   ngOnInit(): void {
@@ -230,17 +225,16 @@ export class HomePage implements OnInit {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency: item.currencyCode ?? 'PHP' }).format((item.amountMinor ?? 0) / 100);
   }
 
-  protected greeting(): string {
-    const hour = new Date().getHours();
-    return hour < 5 ? 'Up late' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  }
-
   setQuery(event: Event): void {
     this.query.set(String((event as CustomEvent).detail.value ?? ''));
   }
 
   openLibrary(type?: 'receipt', favorite = false): void {
     void this.router.navigate(['/library'], { queryParams: { q: this.query().trim() || null, type: type ?? null, favorite: favorite || null } });
+  }
+
+  openNeedsDetails(): void {
+    void this.router.navigate(['/library'], { queryParams: { review: true } });
   }
 
   openCategory(category: string): void {

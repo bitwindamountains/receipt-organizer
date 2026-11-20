@@ -20,10 +20,11 @@ import { closeCircle, star, starOutline } from 'ionicons/icons';
 import { ItemType, SavedItem } from '../../core/models/saved-item';
 import { CategoryStore } from '../../core/services/category.store';
 import { ItemStore } from '../../core/services/item.store';
-import { MonthGroup, displayTitle, groupByMonth, itemDateKey, matchesQuery } from '../../core/utils/item-display';
+import { MonthGroup, displayTitle, groupByMonth, itemDateKey, matchesQuery, needsDetails, receivedTotal } from '../../core/utils/item-display';
+import { monthLabel } from '../../core/utils/insights';
 import { ItemCardComponent } from '../../shared/item-card/item-card.component';
 
-type SortOrder = 'newest' | 'oldest' | 'amount' | 'title';
+type SortOrder = 'newest' | 'oldest' | 'recent' | 'amount' | 'title';
 
 @Component({
   selector: 'app-library',
@@ -47,14 +48,18 @@ type SortOrder = 'newest' | 'oldest' | 'amount' | 'title';
           <ion-select class="filter-select" aria-label="Sort order" interface="popover" [value]="sort()" (ionChange)="setSort($event)">
             <ion-select-option value="newest">Newest first</ion-select-option>
             <ion-select-option value="oldest">Oldest first</ion-select-option>
+            <ion-select-option value="recent">Recently saved</ion-select-option>
             <ion-select-option value="amount">Highest amount</ion-select-option>
             <ion-select-option value="title">Title A-Z</ion-select-option>
           </ion-select>
           <button type="button" class="fav-toggle" [class.is-on]="favoriteOnly()" [attr.aria-pressed]="favoriteOnly()" (click)="toggleFavorites()">
-            <ion-icon [name]="favoriteOnly() ? 'star' : 'star-outline'" aria-hidden="true" /> Favorites
+            <ion-icon [name]="favoriteOnly() ? 'star' : 'star-outline'" aria-hidden="true" /><span class="fav-label">Favorites</span>
           </button>
         </section>
 
+        @if (month() || review()) {
+          <p class="filter-note">Showing {{ review() ? 'receipts that need an amount or date' : '' }}{{ review() && month() ? ' in ' : '' }}{{ month() ? monthTitle(month()) : '' }}</p>
+        }
         <div class="results-bar">
           <strong class="num" aria-live="polite">{{ results().length }} {{ results().length === 1 ? 'item' : 'items' }}</strong>
           @if (hasFilters()) {
@@ -71,7 +76,8 @@ type SortOrder = 'newest' | 'oldest' | 'amount' | 'title';
                   <!-- With one month the count above already says it; only the total is new. -->
                   <span class="num">
                     @if (groups().length > 1) { {{ group.items.length }} {{ group.items.length === 1 ? 'item' : 'items' }} }
-                    @if (group.receipts; as receipts) { @if (groups().length > 1) { · }{{ receipts.total }}@if (receipts.otherCurrencies) {+} }
+                    @if (group.receipts; as receipts) { @if (groups().length > 1) { · }{{ receipts.total }}@if (receipts.otherCurrencies) {+} spent }
+                    @if (received(group.items); as plus) { <span class="is-income">· {{ plus }} in</span> }
                   </span>
                 </header>
               }
@@ -108,14 +114,21 @@ export class LibraryPage implements OnInit {
   protected readonly category = signal('all');
   protected readonly sort = signal<SortOrder>('newest');
   protected readonly favoriteOnly = signal(false);
-  protected readonly hasFilters = computed(() => Boolean(this.query().trim()) || this.type() !== 'all' || this.category() !== 'all' || this.favoriteOnly());
+  /** YYYY-MM from Insights or Home links; '' for every month. */
+  protected readonly month = signal('');
+  /** Receipts missing an amount or date (Home's "Needs details"). */
+  protected readonly review = signal(false);
+  protected readonly received = receivedTotal;
+  protected readonly monthTitle = (key: string) => monthLabel(key, 'long', true);
+  protected readonly hasFilters = computed(() => Boolean(this.query().trim()) || this.type() !== 'all' || this.category() !== 'all' || this.favoriteOnly() || Boolean(this.month()) || this.review());
   protected readonly results = computed(() => this.sortItems(this.store.items().filter((item) =>
     (this.type() === 'all' || item.type === this.type()) &&
     (this.category() === 'all' || item.category === this.category()) &&
-    (!this.favoriteOnly() || item.isFavorite) && matchesQuery(item, this.query()),
+    (!this.favoriteOnly() || item.isFavorite) && matchesQuery(item, this.query()) &&
+    (!this.month() || itemDateKey(item).startsWith(this.month())) && (!this.review() || needsDetails(item)),
   )));
-  /** Date sorts are split into months; amount and title sorts are one unlabeled group. */
-  protected readonly groups = computed<MonthGroup[]>(() => this.sort() === 'title' || this.sort() === 'amount'
+  /** Date sorts are split into months; amount, recent and title sorts are one unlabeled group. */
+  protected readonly groups = computed<MonthGroup[]>(() => this.sort() === 'title' || this.sort() === 'amount' || this.sort() === 'recent'
     ? [{ key: 'all', label: '', items: this.results(), receipts: null }]
     : groupByMonth(this.results()));
 
@@ -134,7 +147,7 @@ export class LibraryPage implements OnInit {
   setCategory(event: Event): void { this.category.set(String((event as CustomEvent).detail.value ?? 'all')); this.syncUrl(); }
   setSort(event: Event): void { this.sort.set(((event as CustomEvent).detail.value ?? 'newest') as SortOrder); this.syncUrl(); }
   toggleFavorites(): void { this.favoriteOnly.update((value) => !value); this.syncUrl(); }
-  clearFilters(): void { this.query.set(''); this.type.set('all'); this.category.set('all'); this.favoriteOnly.set(false); this.syncUrl(); }
+  clearFilters(): void { this.query.set(''); this.type.set('all'); this.category.set('all'); this.favoriteOnly.set(false); this.month.set(''); this.review.set(false); this.syncUrl(); }
 
   private applyParams(params: ParamMap): void {
     const type = params.get('type');
@@ -143,7 +156,10 @@ export class LibraryPage implements OnInit {
     this.type.set(type === 'receipt' || type === 'screenshot' ? type : 'all');
     this.category.set(params.get('category') ?? 'all');
     this.favoriteOnly.set(params.get('favorite') === 'true');
-    this.sort.set(sort === 'oldest' || sort === 'amount' || sort === 'title' ? sort : 'newest');
+    const month = params.get('month') ?? '';
+    this.month.set(/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ? month : '');
+    this.review.set(params.get('review') === 'true');
+    this.sort.set(sort === 'oldest' || sort === 'recent' || sort === 'amount' || sort === 'title' ? sort : 'newest');
   }
 
   /** Keeps the URL in step with the filters so Home shortcuts and tab switches restore them. */
@@ -157,6 +173,8 @@ export class LibraryPage implements OnInit {
         category: this.category() === 'all' ? null : this.category(),
         favorite: this.favoriteOnly() || null,
         sort: this.sort() === 'newest' ? null : this.sort(),
+        month: this.month() || null,
+        review: this.review() || null,
       },
     });
   }
@@ -171,6 +189,8 @@ export class LibraryPage implements OnInit {
     }
     // By the date on the receipt (else the day it was saved); items from the same day keep save order.
     const byDate = (a: SavedItem, b: SavedItem) => itemDateKey(a).localeCompare(itemDateKey(b)) || a.createdAt.localeCompare(b.createdAt);
+    // The library in the order things were added, whatever their receipt date.
+    if (order === 'recent') return [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     // Biggest first; items without an amount go last, newest first among equals.
     if (order === 'amount') return [...items].sort((a, b) => (b.amountMinor ?? -1) - (a.amountMinor ?? -1) || byDate(b, a));
     return [...items].sort((a, b) => (order === 'oldest' ? byDate(a, b) : byDate(b, a)));

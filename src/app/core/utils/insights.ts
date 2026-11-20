@@ -1,4 +1,5 @@
 import { SavedItem } from '../models/saved-item';
+import { TRANSFERS, countsAsSpending } from './item-display';
 
 export interface CategorySpend {
   name: string;
@@ -35,6 +36,8 @@ export interface MonthInsights {
   /** The six months ending with this one, oldest first. */
   trend: MonthPoint[];
   income: { amount: number; count: number };
+  /** Money sent to people or other accounts this month: shown, but not counted as spending. */
+  transfers: { amount: number; count: number };
   /** Every spending receipt in this currency, any month: grows with each receipt saved, whatever its date. */
   allTime: { amount: number; count: number };
   /** Receipts this month in other currencies, left out of the totals. */
@@ -67,7 +70,7 @@ const isMoneyReceipt = (item: SavedItem) => item.type === 'receipt' && item.amou
 /** The currency most spending receipts use (money-in receipts when there's no spending); insights are shown in it. */
 export function primaryCurrency(items: SavedItem[]): string | null {
   const money = items.filter(isMoneyReceipt);
-  const spending = money.filter((item) => item.flow !== 'income');
+  const spending = money.filter(countsAsSpending);
   const counts = new Map<string, number>();
   for (const item of spending.length ? spending : money) counts.set(item.currencyCode!, (counts.get(item.currencyCode!) ?? 0) + 1);
   return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
@@ -95,7 +98,7 @@ export function openingMonth(items: SavedItem[], latest: string): string {
 }
 
 export function buildInsights(items: SavedItem[], monthKey: string, currency: string, trendLength = 6): MonthInsights {
-  const spending = items.filter((item) => isMoneyReceipt(item) && item.flow !== 'income');
+  const spending = items.filter(countsAsSpending);
   const inMonth = (item: SavedItem, key: string) => receiptDay(item).startsWith(key);
   const inCurrency = (item: SavedItem) => item.currencyCode === currency;
 
@@ -127,6 +130,7 @@ export function buildInsights(items: SavedItem[], monthKey: string, currency: st
   }
 
   const income = items.filter((item) => isMoneyReceipt(item) && item.flow === 'income' && inMonth(item, monthKey) && inCurrency(item));
+  const transfers = items.filter((item) => isMoneyReceipt(item) && item.flow !== 'income' && item.category === TRANSFERS && inMonth(item, monthKey) && inCurrency(item));
 
   return {
     monthKey,
@@ -143,6 +147,7 @@ export function buildInsights(items: SavedItem[], monthKey: string, currency: st
     merchants: [...byMerchant.values()].sort((a, b) => b.amount - a.amount || b.count - a.count).slice(0, 5),
     trend,
     income: { amount: sum(income), count: income.length },
+    transfers: { amount: sum(transfers), count: transfers.length },
     allTime: { amount: sum(spending.filter(inCurrency)), count: spending.filter(inCurrency).length },
     otherCurrencyCount: month.length - counted.length,
   };

@@ -7,6 +7,7 @@ import {
   IonButton,
   IonButtons,
   IonContent,
+  IonFooter,
   IonHeader,
   IonIcon,
   IonInput,
@@ -19,6 +20,7 @@ import {
   IonTitle,
   IonToolbar,
   ToastController,
+  AlertController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { add, checkmarkCircle, chevronForward, close, cloudUploadOutline, createOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline } from 'ionicons/icons';
@@ -33,22 +35,23 @@ import { ReceiptSuggestion, parseReceiptText, suggestCategory } from '../../core
 import { TextRecognitionService } from '../../core/ocr/text-recognition.service';
 import { parseTransaction } from '../../core/capture/transaction-parser';
 import { injectGoBack } from '../../core/utils/navigation';
-import { displayTitle, findDuplicate, formatAmount, localDateKey, merchantSuggestions } from '../../core/utils/item-display';
+import { TRANSFERS, displayTitle, findDuplicate, formatAmount, localDateKey, merchantSuggestions } from '../../core/utils/item-display';
+import { DiscardGuarded } from '../../core/utils/confirm-discard';
 import { monthLabel } from '../../core/utils/insights';
 import { ReplayAnimationDirective } from '../../shared/replay-animation.directive';
 import { TypedField, detailsForImage } from './batch-details';
 
-type AutoFillField = 'type' | 'category' | 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate' | 'flow' | 'tags';
+type AutoFillField = 'type' | 'category' | 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate' | 'flow' | 'tags' | 'title';
 const MAX_IMAGES = 10;
 
 @Component({
   selector: 'app-add-item',
   host: { '(document:paste)': 'onPaste($event)' },
-  imports: [ReactiveFormsModule, RouterLink, ReplayAnimationDirective, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption, IonNote, IonSpinner],
+  imports: [ReactiveFormsModule, RouterLink, ReplayAnimationDirective, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonFooter, IonButton, IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption, IonNote, IonSpinner],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="Cancel" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="Cancel" aria-label="Cancel" /></ion-buttons>
         <ion-title>{{ existing() ? 'Edit details' : isBatch() ? 'Add images' : 'Add image' }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -66,7 +69,7 @@ const MAX_IMAGES = 10;
               </button>
               @if (canRead(image)) {
                 <button type="button" class="autofill-button" (click)="runAutoFill()" [disabled]="reading() || saving()">
-                  @if (reading()) { <ion-spinner name="crescent" /> Reading... } @else { <ion-icon name="sparkles" aria-hidden="true" /> Auto-fill }
+                  @if (reading()) { <ion-spinner name="crescent" /> Reading... } @else { <ion-icon name="sparkles" aria-hidden="true" /> {{ autoFilledFrom === image.sourceUrl ? 'Read again' : 'Auto-fill' }} }
                 </button>
               }
             </div>
@@ -105,7 +108,8 @@ const MAX_IMAGES = 10;
               </span>
               <strong>Choose screenshots or receipts</strong>
               <small>Up to {{ maxImages }} at once · JPG, PNG, or WEBP · stays on this device</small>
-              @if (!native) { <small class="picker-hint">Or paste a screenshot (Ctrl/⌘+V) or drop images here</small> }
+              <!-- Paste and drop need a keyboard and mouse: phones (web or app) never see this hint. -->
+              @if (!native && finePointer) { <small class="picker-hint">Or paste a screenshot (Ctrl/⌘+V) or drop images here</small> }
             </button>
             @if (!existing()) {
               <a class="create-receipt-link" routerLink="/receipt/new" replaceUrl>
@@ -117,7 +121,9 @@ const MAX_IMAGES = 10;
           }
         </section>
 
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <!-- The form appears once there is an image to describe; before that the only question is which image. -->
+        @if (selection().length || existing()) {
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate animate.enter="enter-fade">
           <fieldset class="type-toggle" [class.is-receipt]="isReceipt()" [class.auto-filled]="filled().has('type')">
             <legend>What kind of image is this?</legend>
             <div class="type-track">
@@ -155,12 +161,17 @@ const MAX_IMAGES = 10;
                   <ion-select-option value="expense">I paid (counts as spending)</ion-select-option>
                   <ion-select-option value="income">I received (money in)</ion-select-option>
                 </ion-select>
+                @if (formValue().category === transfers) { <ion-note slot="helper">Transfers aren't counted as spending; Insights shows them on their own.</ion-note> }
               </ion-item>
               <ion-item [class.auto-filled]="filled().has('purchaseDate')"><ion-input formControlName="purchaseDate" label="Purchase date (optional)" labelPlacement="stacked" type="date" /></ion-item>
-              <ion-item lines="none">
-                <ion-input formControlName="warrantyUntil" label="Warranty or return until (optional)" labelPlacement="stacked" type="date" />
-                <ion-note slot="helper">We'll remind you a week before it ends</ion-note>
-              </ion-item>
+              @if (showWarranty() || formValue().warrantyUntil) {
+                <ion-item lines="none" animate.enter="enter-expand">
+                  <ion-input formControlName="warrantyUntil" label="Warranty or return until (optional)" labelPlacement="stacked" type="date" />
+                  <ion-note slot="helper">We'll remind you a week before it ends</ion-note>
+                </ion-item>
+              } @else {
+                <button type="button" class="line-add form-add-field" (click)="showWarranty.set(true)"><ion-icon name="add" aria-hidden="true" /> Add a warranty or return date</button>
+              }
             </div>
           }
 
@@ -175,38 +186,52 @@ const MAX_IMAGES = 10;
             <ion-item lines="none"><ion-textarea formControlName="notes" label="Notes (optional)" labelPlacement="stacked" [autoGrow]="true" [maxlength]="1000" /></ion-item>
           </div>
 
-          @if (duplicate(); as dup) {
-            <p class="form-note" role="status">Looks like you saved this already: <a [routerLink]="['/item', dup.id]">{{ title(dup) }}</a> · {{ amountOf(dup) }}. You can still save it.</p>
-          }
-          @if (error()) { <p class="form-error" role="alert" animate.enter="enter-fade">{{ error() }}</p> }
-          @if (progress(); as p) {
-            <div class="save-progress" role="progressbar" aria-label="Saving images" [attr.aria-valuenow]="p.done" aria-valuemin="0" [attr.aria-valuemax]="p.total">
-              <span [style.--p]="p.done / p.total"></span>
-            </div>
-          }
-          <ion-button class="save-button" [class.is-saving]="saving()" expand="block" size="large" type="submit" [disabled]="saving() || !selection().length">
+          <!-- Enter in a field still saves; the visible buttons live in the footer. -->
+          <button type="submit" hidden aria-hidden="true" tabindex="-1"></button>
+        </form>
+        }
+      </main>
+    </ion-content>
+    @if (selection().length || existing()) {
+      <!-- Always in reach: the decision, and anything that should inform it, sits by the thumb, not two screens down. -->
+      <ion-footer class="save-bar ion-no-border">
+        @if (duplicate(); as dup) {
+          <div class="form-note" role="status">
+            <span>Looks like you saved this already: <a [routerLink]="['/item', dup.id]">{{ title(dup) }}</a> · {{ amountOf(dup) }}.</span>
+            @if (!existing()) { <button type="button" (click)="discardActive()">Discard this one</button> }
+          </div>
+        }
+        @if (error()) { <p class="form-error" role="alert" animate.enter="enter-fade">{{ error() }}</p> }
+        @if (progress(); as p) {
+          <div class="save-progress" role="progressbar" aria-label="Saving images" [attr.aria-valuenow]="p.done" aria-valuemin="0" [attr.aria-valuemax]="p.total">
+            <span [style.--p]="p.done / p.total"></span>
+          </div>
+        }
+        <div class="save-actions">
+          <ion-button class="save-button" [class.is-saving]="saving()" expand="block" size="large" (click)="save()" [disabled]="saving() || !selection().length">
             @if (saving()) {
               <ion-spinner name="crescent" slot="start" />
               @if (progress(); as p) { Saving {{ p.done + 1 }} of {{ p.total }}... } @else { Saving safely... }
             } @else {
-              {{ existing() ? 'Save changes' : isBatch() ? 'Save ' + selection().length + ' images' : 'Save image' }}
+              {{ existing() ? 'Save changes' : isBatch() ? 'Save ' + selection().length + ' images' : 'Save' }}
             }
           </ion-button>
-          @if (!existing()) {
-            <ion-button fill="clear" expand="block" size="large" type="button" (click)="save(true)" [disabled]="saving() || !selection().length">Save and add another</ion-button>
+          @if (!existing() && !isBatch()) {
+            <ion-button class="save-button" fill="outline" expand="block" (click)="save(true)" [disabled]="saving() || !selection().length">Save &amp; add next</ion-button>
           }
-        </form>
-      </main>
-    </ion-content>
+        </div>
+      </ion-footer>
+    }
   `,
 })
-export class AddItemPage implements OnInit {
+export class AddItemPage implements OnInit, DiscardGuarded {
   private readonly formBuilder = inject(FormBuilder);
   private readonly images = inject(ImageStorageService);
   private readonly store = inject(ItemStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastController = inject(ToastController);
+  private readonly alertController = inject(AlertController);
   private readonly goBackOr = injectGoBack();
   protected readonly categories = inject(CategoryStore);
   private readonly recognition = inject(TextRecognitionService);
@@ -233,7 +258,12 @@ export class AddItemPage implements OnInit {
   private filledTimer?: ReturnType<typeof setTimeout>;
   private readRequest = 0;
   /** The image the form's auto-filled values came from; in a batch they belong to it alone. */
-  private autoFilledFrom: string | null = null;
+  protected autoFilledFrom: string | null = null;
+  protected readonly finePointer = matchMedia('(pointer: fine)').matches;
+  protected readonly transfers = TRANSFERS;
+  protected readonly showWarranty = signal(false);
+  /** Set once saving finished, so the page can leave without asking to discard. */
+  private done = false;
   protected readonly error = signal('');
   protected readonly existing = signal<SavedItem | null>(null);
   /** Changes on each newly picked image so the scan sweep replays. */
@@ -429,6 +459,9 @@ export class AddItemPage implements OnInit {
       offer('currencyCode', suggestion.currencyCode);
       offer('purchaseDate', suggestion.purchaseDate);
       offer('flow', suggestion.flow);
+      // A transfer's merchant is a person ("Jl…Y B."); a title says what happened.
+      const payee = changes.merchant ?? before.merchant;
+      if ((changes.category ?? before.category) === TRANSFERS && payee) offer('title', `${(changes.flow ?? before.flow) === 'income' ? 'Received from' : 'Sent to'} ${payee}`);
     }
     if (!before.tags.trim()) offer('tags', suggestion.tags.join(', '));
     const fields = Object.keys(changes) as AutoFillField[];
@@ -586,9 +619,15 @@ export class AddItemPage implements OnInit {
   }
 
   /** " · counted in May 2026" for a receipt dated outside this month, which Insights and Home's total won't show by default. */
+  /** Says where the money went, so a receipt that doesn't move this month's spending isn't a mystery. */
   private countedIn(): string {
+    const { type, amountMinor, flow, category } = this.details();
+    if (type !== 'receipt' || amountMinor === null) return '';
     const month = this.otherMonth();
-    return month ? ` · counted in ${monthLabel(month, 'long', true)}` : '';
+    const when = month ? ` in ${monthLabel(month, 'long', true)}` : '';
+    if (category === TRANSFERS) return ` · a transfer${when}, not counted as spending`;
+    if (flow === 'income') return month ? ` · money in${when}` : '';
+    return month ? ` · counted${when}` : '';
   }
 
   /** The YYYY-MM a receipt with an amount counts in, when that isn't this month. */
@@ -606,22 +645,48 @@ export class AddItemPage implements OnInit {
     const month = this.otherMonth();
     // A receipt dated in another month doesn't move this month's totals, so offer to show where it went.
     const toast = await this.toastController.create({
-      message, duration: month ? 5000 : 1800, position: 'bottom', icon: 'checkmark-circle',
-      buttons: month ? [{ text: 'Show', handler: () => void this.router.navigate(['/insights'], { queryParams: { month } }) }] : undefined,
+      message, duration: month ? 8000 : 2500, position: 'bottom', icon: 'checkmark-circle',
+      buttons: month ? [{ text: `See ${monthLabel(month)}`, handler: () => void this.router.navigate(['/insights'], { queryParams: { month } }) }] : undefined,
     });
     await toast.present();
-    if (stay) this.startOver();
-    else this.goBackOr(fallback);
+    if (stay) {
+      this.startOver();
+    } else {
+      this.done = true;
+      this.goBackOr(fallback);
+    }
   }
 
   /** "Save and add another": an empty form for the next receipt, keeping the currency. */
   private startOver(): void {
-    this.form.reset({ currencyCode: this.preferences.lastCurrency() });
+    // Batches are usually alike (a pile of receipts, one category): keep type and category too.
+    const { type, category } = this.form.getRawValue();
+    this.form.reset({ currencyCode: this.preferences.lastCurrency(), type, category });
+    this.showWarranty.set(false);
     this.autoFill.set(null);
     this.filled.set(new Set());
     this.autoFilledFrom = null;
     this.savedHere.set(new Set());
     void this.host.querySelector('ion-content')?.scrollToTop(300);
+  }
+
+  /** "Discard this one" on the duplicate notice: drop the image on screen, keep any others. */
+  discardActive(): void {
+    this.removeAt(this.activeIndex());
+    if (!this.selection().length) this.startOver();
+  }
+
+  /** Cancel, the back arrow or Android back with an image picked or details typed asks first. */
+  async confirmLeave(): Promise<boolean> {
+    const unsaved = (!this.existing() && this.selection().length > 0) || this.form.dirty || this.replacementSelected();
+    if (this.done || this.saving() || !unsaved) return true;
+    const alert = await this.alertController.create({
+      header: this.existing() ? 'Discard your changes?' : 'Discard this receipt?',
+      message: this.existing() ? 'Your edits won\'t be saved.' : 'The image and details won\'t be saved.',
+      buttons: [{ text: 'Keep editing', role: 'cancel' }, { text: 'Discard', role: 'destructive', cssClass: 'alert-danger' }],
+    });
+    await alert.present();
+    return (await alert.onDidDismiss()).role === 'destructive';
   }
 
   /** Fills a merchant used before and, unless a category was chosen, the category used for it last time. */

@@ -31,21 +31,7 @@ $zigzag: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90d
 // Short measure on purpose: two left-aligned lines, the fanned slips own the right.
 .hero h1 { max-width: 12.5ch; margin: 6px 0 22px; font-size: clamp(2.1rem, 9.4vw, 3.4rem); font-weight: 800; line-height: 1.04; letter-spacing: -.045em; text-wrap: balance; }
 
-// A real thumbnail set into the headline like a word.
-.inline-thumb {
-  display: inline-block;
-  width: 1.7em;
-  height: .8em;
-  margin-inline: .04em;
-  overflow: hidden;
-  border: 2px solid var(--sn-paper);
-  border-radius: 999px;
-  background: var(--sn-surface-soft);
-  box-shadow: var(--sn-shadow-2);
-  vertical-align: -.04em;
-  transform: rotate(-4deg);
-}
-.inline-thumb img, .fan-slip img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fan-slip img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 // The three latest saves, fanned like receipts on the sorting table.
 .hero-fan { position: absolute; top: -40px; right: 2px; width: 140px; height: 112px; pointer-events: none; }
@@ -69,11 +55,12 @@ $zigzag: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90d
 @media (prefers-reduced-motion: no-preference) {
   .fan-slip { animation: sn-fan-in 900ms var(--sn-ease-spring) both; animation-delay: calc(var(--n) * 120ms + 250ms); }
   .hero-fan { animation: sn-float 7s var(--sn-ease-in-out) 1.4s infinite; }
-  .inline-thumb { animation: sn-pop 600ms var(--sn-ease-spring) 500ms both; }
 }
 .stat-skeleton { min-height: 104px; border-radius: 20px; }
 .home-skeleton { margin-top: 40px; }
 .quick-categories { margin-top: 30px; }
+// The chip row scrolls sideways: fade the edges so it reads as more-to-see, not cut off.
+.quick-categories .chip-row { -webkit-mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 28px), transparent); }
 
 // ---------- Onboarding ----------
 .welcome {
@@ -93,7 +80,8 @@ $zigzag: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90d
 .trust-icon { display: grid; flex: 0 0 auto; place-items: center; width: 40px; height: 40px; border-radius: 13px; background: var(--sn-primary-soft); color: var(--ion-color-primary); font-size: 20px; }
 .trust-list span { color: var(--ion-color-medium); line-height: 1.45; }
 .trust-list strong { display: block; color: var(--ion-text-color); }
-.welcome .actions { margin-top: 34px; }
+// Both choices stay on screen: on a 780px phone the demo option used to sit below the fold.
+.welcome .actions { position: sticky; bottom: 0; z-index: 2; margin: 34px -6px 0; padding: 14px 6px calc(10px + var(--ion-safe-area-bottom)); background: linear-gradient(to bottom, rgba(var(--ion-background-color-rgb), 0), var(--ion-background-color) 22px); }
 .welcome ion-button { min-height: 54px; font-weight: 760; }
 
 .sort-stage { display: grid; place-items: center; height: 236px; margin-bottom: 8px; }
@@ -197,7 +185,7 @@ $zigzag: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90d
 .library ion-searchbar.sn-search { margin-bottom: 12px; --box-shadow: var(--sn-shadow-1); }
 .filter-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 12px; }
 .filter-select {
-  min-height: 46px;
+  min-height: 48px;
   padding-inline: 14px;
   border: 1px solid var(--sn-border);
   border-radius: 14px;
@@ -210,7 +198,8 @@ $zigzag: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90d
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 46px;
+  min-height: 48px;
+  min-width: 48px;
   padding: 0 14px;
   border: 1px solid var(--sn-border);
   border-radius: 14px;
@@ -226,16 +215,23 @@ $zigzag: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90d
 .fav-toggle.is-on { border-color: transparent; background: var(--sn-gold-soft); color: var(--sn-gold-text); }
 .results-bar { display: flex; align-items: center; justify-content: space-between; min-height: 40px; margin: 18px 2px 12px; }
 .results-bar ion-button { margin: 0; }
+// Phones: Favorites becomes a star beside the selects instead of a full-width row.
 @media (max-width: 560px) {
-  .filter-row { grid-template-columns: 1fr 1fr; }
-  .fav-toggle { grid-column: 1 / -1; }
+  .filter-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 48px; }
+  .fav-toggle { padding: 0; }
+  .fav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+.filter-note { margin: 12px 2px 0; color: var(--ion-color-medium); font-size: .86rem; font-weight: 650; }
+.month-header .is-income { color: var(--ion-color-primary); white-space: nowrap; }
 @media (prefers-reduced-motion: no-preference) {
   .fav-toggle.is-on ion-icon { animation: sn-wiggle 500ms var(--sn-ease-out); }
 }
 
 // ---------- Item details ----------
 .detail-header { position: absolute; inset: 0 0 auto; z-index: 5; }
+// Once the image scrolls away the white icons would sit on the page: give the bar a surface.
+.detail-header.is-scrolled ion-toolbar { --background: rgba(var(--ion-background-color-rgb), .94); --color: var(--ion-text-color); }
+.detail-header.is-scrolled ion-back-button, .detail-header.is-scrolled ion-buttons ion-button { --color: var(--ion-text-color); --background: var(--sn-surface-soft); }
 .detail-header ion-toolbar { --background: transparent; --color: #fff; padding-inline: 6px; }
 .detail-header ion-back-button,
 .detail-header ion-buttons ion-button {
@@ -558,13 +554,19 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .amount-row { display: grid; grid-template-columns: 120px 1fr; }
 .form-error { margin: 0; padding: 12px 14px; border-radius: 14px; background: rgba(var(--ion-color-danger-rgb), .1); color: var(--ion-color-danger-shade); font-weight: 600; }
 // A heads-up, not an error: the user may still save.
-.form-note { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--sn-primary-soft); color: var(--sn-primary-ink); font-weight: 600; }
+.form-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--sn-primary-soft); color: var(--sn-primary-ink); font-weight: 600; }
 .form-note a { color: inherit; }
+.form-note button { min-height: 44px; margin-left: auto; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: inherit; font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 // Merchant suggestions under the Merchant field.
 // .chip-row bleeds to the screen edge on Home; inside a form card it must stay within the card.
 .chip-row.form-chips { margin-inline: 0; padding: 4px 16px 12px; scroll-padding-inline: 16px; }
 .form-chips .cat-chip { flex: none; padding-inline: 16px; }
-.save-button { min-height: 56px; margin: 4px 0 28px; font-weight: 760; }
+.save-button { min-height: 56px; margin: 0; font-weight: 760; }
+// Add/Edit footer: always reachable by the thumb, above the gesture bar.
+.save-bar { display: grid; gap: 10px; padding: 10px 16px calc(12px + var(--ion-safe-area-bottom)); background: rgba(var(--ion-background-color-rgb), .94); border-top: 1px solid var(--sn-border); }
+.save-bar > * { width: min(100%, 680px); margin-inline: auto; }
+.save-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.form-add-field { margin: 6px 16px 14px; }
 .save-button ion-spinner { width: 20px; height: 20px; margin-right: 8px; }
 
 // ---------- Settings ----------
@@ -684,10 +686,13 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .pay-chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--sn-border); border-radius: 999px; background: var(--ion-background-color); color: var(--ion-text-color); font: inherit; font-size: .86rem; font-weight: 650; cursor: pointer; transition: background-color var(--sn-dur), border-color var(--sn-dur), color var(--sn-dur); }
 .pay-chip[aria-checked='true'] { border-color: transparent; background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); }
 
-.line-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px 96px 40px; align-items: center; gap: 8px; }
+// The item name gets its own full row; quantity, price and remove sit under it (a 66px name field was unusable).
+.line-row { display: grid; grid-template-columns: 1fr 1fr 48px; grid-template-areas: 'desc desc desc' 'qty price remove'; align-items: center; gap: 8px; padding-bottom: 6px; }
+.line-desc { grid-area: desc; } .line-qty { grid-area: qty; } .line-price { grid-area: price; } .line-remove { grid-area: remove; }
+.field-error { margin: 4px 0 0; color: var(--ion-color-danger-shade); font-size: .86rem; font-weight: 650; }
 .line-row .field input { padding: 0 10px; }
 .line-qty input, .line-price input { text-align: right; font-variant-numeric: tabular-nums; }
-.line-remove { display: grid; place-items: center; width: 40px; height: 40px; border: 0; background: transparent; color: var(--ion-color-medium); font-size: 22px; cursor: pointer; }
+.line-remove { display: grid; place-items: center; width: 48px; height: 48px; border: 0; background: transparent; color: var(--ion-color-medium); font-size: 22px; cursor: pointer; }
 .line-remove:disabled { opacity: .3; cursor: default; }
 .line-add { display: inline-flex; align-items: center; justify-self: start; gap: 6px; min-height: 42px; padding: 0 14px; border: 1.5px dashed var(--sn-border-strong); border-radius: 12px; background: transparent; color: var(--ion-color-primary); font: inherit; font-weight: 750; cursor: pointer; }
 .discount { max-width: 200px; }
@@ -757,7 +762,7 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .insights { position: relative; z-index: 1; display: grid; gap: 16px; }
 .month-switcher { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px; border: 1px solid var(--sn-border); border-radius: 18px; background: var(--sn-surface-glass); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 .month-switcher strong { font-size: 1rem; font-weight: 760; }
-.month-switcher button { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 13px; background: var(--sn-surface-soft); color: var(--ion-text-color); font-size: 20px; cursor: pointer; }
+.month-switcher button { display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 13px; background: var(--sn-surface-soft); color: var(--ion-text-color); font-size: 20px; cursor: pointer; }
 .month-switcher button:disabled { opacity: .35; cursor: default; }
 
 .hero-spend { padding: 8px 4px 4px; }
@@ -766,9 +771,9 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .hero-figure { margin: 2px 0 10px; font-size: clamp(3rem, 14vw, 4.2rem); font-weight: 800; line-height: 1; letter-spacing: -.045em; }
 .hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .delta { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 999px; background: var(--sn-surface-soft); color: var(--ion-color-medium); font-size: .82rem; font-weight: 700; }
-.delta--up { background: var(--sn-accent-soft); color: var(--sn-accent-ink); }
-.delta--down { background: var(--sn-primary-soft); color: var(--sn-primary-ink); }
 .hero-count { color: var(--ion-color-medium); font-size: .86rem; font-weight: 600; }
+.hero-link { display: inline-flex; align-items: center; min-height: 48px; color: var(--ion-color-primary); text-decoration: underline; text-underline-offset: 3px; }
+.this-month { justify-self: center; min-height: 48px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: var(--ion-color-primary); font: inherit; font-size: .9rem; font-weight: 750; cursor: pointer; }
 
 .kpi-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 @media (min-width: 760px) { .kpi-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } .kpi-row > .kpi:last-child:nth-child(odd) { grid-column: auto; } }
@@ -788,7 +793,7 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .chart-head h2 { margin: 0; font-size: 1.05rem; }
 .chart-head p { margin: 2px 0 0; color: var(--ion-color-medium); font-size: .8rem; }
-.table-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid var(--sn-border); border-radius: 11px; background: transparent; color: var(--ion-color-medium); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.table-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 12px; border: 1px solid var(--sn-border); border-radius: 11px; background: transparent; color: var(--ion-color-medium); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
 .table-toggle[aria-pressed="true"] { border-color: var(--ion-color-primary); color: var(--ion-color-primary); }
 
 .column-chart { position: relative; }
@@ -816,6 +821,9 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 
 // Single-series bars: one hue, labels in text ink, value at the end.
 .bar-list { display: grid; gap: 14px; margin: 4px 0 2px; padding: 0; list-style: none; }
+// Each category row opens its receipts in Library.
+.bar-link { display: block; padding: 6px 0; color: inherit; text-decoration: none; border-radius: 10px; }
+@media (hover: hover) { .bar-link:hover .bar-name { color: var(--ion-color-primary); } }
 .bar-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
 .bar-name { flex: 1; min-width: 0; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .bar-value { font-weight: 750; }
@@ -825,7 +833,8 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .chart-empty { margin: 8px 0; color: var(--ion-color-medium); }
 
 .merchant-list { display: grid; margin: 0; padding: 0; list-style: none; }
-.merchant-list li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--sn-border); }
+.merchant-list li { border-bottom: 1px solid var(--sn-border); }
+.merchant-link { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 11px 0; color: inherit; text-decoration: none; }
 .merchant-list li:last-child { border-bottom: 0; }
 .merchant-rank { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: var(--sn-surface-soft); color: var(--ion-color-medium); font-size: .8rem; font-weight: 800; }
 .merchant-list li:first-child .merchant-rank { background: var(--sn-gold-soft); color: var(--sn-gold-text); }
@@ -835,7 +844,7 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 
 @media (min-width: 760px) {
   .insights { grid-template-columns: 1fr 1fr; align-items: start; }
-  .insights > .month-switcher, .insights > .hero-spend, .insights > .kpi-row, .insights > .spend-story, .insights > .currency-note, .insights > .empty-state { grid-column: 1 / -1; }
+  .insights > .month-switcher, .insights > .this-month, .insights > .hero-spend, .insights > .kpi-row, .insights > .spend-story, .insights > .currency-note, .insights > .empty-state { grid-column: 1 / -1; }
   .insights > .chart-card:first-of-type { grid-column: 1 / -1; }
 }
 

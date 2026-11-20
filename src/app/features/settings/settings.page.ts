@@ -15,7 +15,7 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, albumsOutline, close, cloudOfflineOutline, documentTextOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline } from 'ionicons/icons';
+import { add, albumsOutline, close, documentTextOutline, downloadOutline, flashOutline, folderOpenOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline } from 'ionicons/icons';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
@@ -35,7 +35,7 @@ import { DemoService } from '../../core/demo/demo.service';
       <main class="page-width content-pad settings">
         <section class="privacy-card reveal">
           <span class="privacy-lock" aria-hidden="true"><ion-icon name="lock-closed" /></span>
-          <div><h2>Private by design</h2><p>Your library stays on this device. Starlog has no ads, account, or tracking SDK.</p></div>
+          <div><h2>Private by design</h2><p>Your library stays on this device and works offline. Starlog has no ads, account, or tracking SDK.</p></div>
         </section>
 
         <p class="group-title">Custom categories</p>
@@ -67,40 +67,53 @@ import { DemoService } from '../../core/demo/demo.service';
 
         <p class="group-title">Auto-capture</p>
         <ion-list inset="true" class="reveal capture-list" style="--i: 3">
-          <ion-item lines="full" [disabled]="!capture.native">
+          <ion-item lines="full">
             <ion-icon slot="start" name="flash-outline" aria-hidden="true" />
+            @if (!capture.native) {
+              <!-- Not a disabled toggle: greyed-out text was unreadable. Say plainly where it works. -->
+              <ion-label>
+                <h3>Capture payment notifications</h3>
+                <p>Adds GCash, Maya, and bank payments from their notifications. Read on this device; other notifications are ignored.</p>
+                <p class="capture-state">Available in the Android app</p>
+              </ion-label>
+            } @else {
             <ion-toggle [checked]="capture.status().enabled" (ionChange)="toggleNotifications($event)">
               <ion-label>
                 <h3>Capture payment notifications</h3>
                 <p>Adds GCash, Maya, and bank payments from their notifications. Read on this device; other notifications are ignored.</p>
-                @if (!capture.native) {
-                  <p class="capture-state">Available in the Android app</p>
-                } @else if (capture.status().enabled && !capture.status().accessGranted) {
+                @if (capture.status().enabled && !capture.status().accessGranted) {
                   <p class="capture-state capture-state--warn">Waiting for Notification access</p>
                 } @else if (capture.status().enabled) {
                   <p class="capture-state capture-state--on">On · new payments are added automatically</p>
                 }
               </ion-label>
             </ion-toggle>
+            }
           </ion-item>
           @if (capture.native && capture.status().enabled && !capture.status().accessGranted) {
             <ion-item lines="full" button [detail]="true" (click)="capture.openAccessSettings()">
               <ion-label>Open Notification access settings</ion-label>
             </ion-item>
           }
-          <ion-item lines="full" [disabled]="!capture.native && !capture.supportsFolder">
+          <ion-item lines="full">
             <ion-icon slot="start" name="albums-outline" aria-hidden="true" />
+            @if (!capture.native && !capture.supportsFolder) {
+              <ion-label>
+                <h3>Screenshot inbox</h3>
+                <p>Finds new payment screenshots and offers to add them.</p>
+                <p class="capture-state">Available in the Android app, or Chrome or Edge on a computer</p>
+              </ion-label>
+            } @else {
             <ion-toggle [checked]="preferences.screenshotInbox()" (ionChange)="toggleInbox($event)">
               <ion-label>
                 <h3>Screenshot inbox</h3>
-                <p>{{ capture.native ? 'Finds new payment screenshots in your gallery and offers to add them.' : 'Watches a folder of screenshots on this computer and offers new payments.' }}</p>
-                @if (!capture.native && !capture.supportsFolder) {
-                  <p class="capture-state">Needs Chrome or Edge on a computer</p>
-                } @else if (!capture.native && preferences.screenshotInbox() && capture.folderName()) {
+                <p>{{ capture.native ? 'Finds new payment screenshots in your gallery and offers to add them.' : 'Watches a screenshots folder you choose and offers new payments.' }}</p>
+                @if (!capture.native && preferences.screenshotInbox() && capture.folderName()) {
                   <p class="capture-state capture-state--on">Watching “{{ capture.folderName() }}”</p>
                 }
               </ion-label>
             </ion-toggle>
+            }
           </ion-item>
           @if (!capture.native && preferences.screenshotInbox()) {
             <ion-item lines="full" button [detail]="true" (click)="capture.chooseFolder()">
@@ -113,12 +126,8 @@ import { DemoService } from '../../core/demo/demo.service';
           </ion-item>
         </ion-list>
 
-        <p class="group-title">Your data</p>
+        <p class="group-title">Your data · {{ store.items().length }} saved {{ store.items().length === 1 ? 'item' : 'items' }}</p>
         <ion-list inset="true" class="reveal" style="--i: 4">
-          <ion-item lines="full">
-            <ion-icon slot="start" name="images-outline" aria-hidden="true" />
-            <ion-label><h3>Storage</h3><p>{{ store.items().length }} saved {{ store.items().length === 1 ? 'item' : 'items' }}</p></ion-label>
-          </ion-item>
           <ion-item lines="full" button [detail]="false" [disabled]="demo.busy()" (click)="toggleDemo()">
             <ion-icon slot="start" name="receipt-outline" aria-hidden="true" />
             @if (demo.active()) {
@@ -136,10 +145,6 @@ import { DemoService } from '../../core/demo/demo.service';
             <ion-label><h3>Restore from backup</h3><p>Adds the items from a backup file. Nothing already here is changed.</p></ion-label>
           </ion-item>
           <input #restoreInput type="file" accept=".zip,application/zip" hidden (change)="restoreBackup(restoreInput)" />
-          <ion-item lines="none">
-            <ion-icon slot="start" name="cloud-offline-outline" aria-hidden="true" />
-            <ion-label><h3>Works offline</h3><p>No account or connection required</p></ion-label>
-          </ion-item>
         </ion-list>
 
         <p class="group-title">Privacy controls</p>
@@ -178,7 +183,7 @@ export class SettingsPage {
   protected readonly demo = inject(DemoService);
 
   constructor() {
-    addIcons({ add, albumsOutline, close, cloudOfflineOutline, documentTextOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline });
+    addIcons({ add, albumsOutline, close, documentTextOutline, downloadOutline, flashOutline, folderOpenOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline });
     void this.store.load();
   }
 
@@ -290,8 +295,12 @@ export class SettingsPage {
   async confirmErase(): Promise<void> {
     const alert = await this.alerts.create({
       header: 'Erase all Starlog data?',
-      message: 'Every app-managed image and its details, your custom categories, captured payments waiting to be filed, the screenshot inbox, and your business details will be permanently removed, and payment capture is turned off. Gallery originals are not affected.',
-      buttons: [{ text: 'Cancel', role: 'cancel' }, { text: 'Erase everything', role: 'destructive', handler: () => void this.eraseAll() }],
+      message: `All ${this.store.items().length} saved items, your categories and settings are deleted for good. Photos in your gallery stay.`,
+      buttons: [
+        { text: 'Export backup first', handler: () => void this.exportBackup() },
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Erase everything', role: 'destructive', cssClass: 'alert-danger', handler: () => void this.eraseAll() },
+      ],
     });
     await alert.present();
   }

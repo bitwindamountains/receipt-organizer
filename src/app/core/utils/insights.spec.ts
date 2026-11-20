@@ -31,6 +31,14 @@ describe('insights', () => {
     expect(openingMonth([], '2026-11')).toBe('2026-11');
   });
 
+  it('shows transfers on their own instead of counting them as spending', () => {
+    const withTransfer = [...items, receipt({ category: 'Transfers', amountMinor: 15000, merchant: 'Jl...Y B.' })];
+    const result = buildInsights(withTransfer, '2026-10', 'PHP');
+    expect(result.spent).toBe(100000);
+    expect(result.transfers).toEqual({ amount: 15000, count: 1 });
+    expect(result.categories.map((c) => c.name)).not.toContain('Transfers');
+  });
+
   it('still shows money in when there is no spending at all', () => {
     const receivedOnly = [receipt({ purchaseDate: '2026-05-09', flow: 'income', amountMinor: 15000 })];
     expect(primaryCurrency(receivedOnly)).toBe('PHP');

@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonHeader, IonIcon, IonTitle, IonToolbar } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { arrowDown, arrowUp, chevronBack, chevronForward, gridOutline, receiptOutline, storefrontOutline, trophyOutline } from 'ionicons/icons';
+import { arrowDown, arrowUp, chevronBack, chevronForward, gridOutline, receiptOutline, storefrontOutline, swapHorizontalOutline, trophyOutline } from 'ionicons/icons';
 import { ItemStore } from '../../core/services/item.store';
 import { availableMonths, buildInsights, monthKeyOf, monthLabel, openingMonth, primaryCurrency, shiftMonth } from '../../core/utils/insights';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
@@ -52,34 +52,45 @@ interface Column {
             <strong aria-live="polite">{{ monthTitle() }}</strong>
             <button type="button" (click)="step(-1)" [disabled]="!hasNewer()" aria-label="Next month"><ion-icon name="chevron-forward" /></button>
           </nav>
+          @if (month() !== currentMonth) {
+            <button type="button" class="this-month" (click)="select(currentMonth)" animate.enter="enter-fade">Back to this month</button>
+          }
 
           <section class="hero-spend reveal" style="--i: 1">
             <p class="hero-label">Spent in {{ monthName() }}</p>
             <p class="hero-figure" [appCountUp]="data.spent" [countFormat]="money"></p>
             <div class="hero-meta">
               @if (data.change !== null) {
-                <span class="delta" [class.delta--up]="data.change > 0" [class.delta--down]="data.change < 0">
+                <!-- An amount, in a neutral pill: "+510%" over a one-receipt month read as an alarm. -->
+                <span class="delta">
                   <ion-icon [name]="data.change > 0 ? 'arrow-up' : 'arrow-down'" aria-hidden="true" />
-                  {{ percent(data.change) }} {{ data.change > 0 ? 'more' : 'less' }} than {{ previousName() }}
+                  {{ money(abs(data.spent - data.previousSpent)) }} {{ data.change > 0 ? 'more' : 'less' }} than {{ previousName() }}
                 </span>
               } @else {
                 <span class="delta">Nothing to compare with {{ previousName() }}</span>
               }
-              <span class="hero-count">{{ data.receiptCount }} {{ data.receiptCount === 1 ? 'receipt' : 'receipts' }}</span>
+              <a class="hero-count hero-link" routerLink="/library" [queryParams]="{ month: month() }">{{ data.receiptCount }} {{ data.receiptCount === 1 ? 'receipt' : 'receipts' }}</a>
               <span class="hero-count">{{ money(data.allTime.amount) }} all time · {{ data.allTime.count }} {{ data.allTime.count === 1 ? 'receipt' : 'receipts' }}</span>
             </div>
           </section>
 
           <section class="kpi-row" aria-label="Month summary">
-            <div class="kpi reveal" style="--i: 2"><span class="kpi-icon"><ion-icon name="receipt-outline" aria-hidden="true" /></span><span class="kpi-label">Average receipt</span><strong>{{ money(data.average) }}</strong></div>
+            @if (data.receiptCount > 1) {
+              <div class="kpi reveal" style="--i: 2"><span class="kpi-icon"><ion-icon name="receipt-outline" aria-hidden="true" /></span><span class="kpi-label">Average receipt</span><strong>{{ money(data.average) }}</strong></div>
+            }
+            @if (data.biggest) {
             <a class="kpi reveal" style="--i: 3" [routerLink]="data.biggest ? ['/item', data.biggest.id] : null" [class.is-static]="!data.biggest">
               <span class="kpi-icon kpi-icon--accent"><ion-icon name="trophy-outline" aria-hidden="true" /></span>
               <span class="kpi-label">Biggest</span>
               <strong>{{ data.biggest ? money(data.biggest.amount) : '—' }}</strong>
               @if (data.biggest) { <small>{{ data.biggest.title }}</small> }
             </a>
+            }
             @if (data.income.count) {
               <div class="kpi reveal" style="--i: 4"><span class="kpi-icon kpi-icon--gold"><ion-icon name="storefront-outline" aria-hidden="true" /></span><span class="kpi-label">Money in</span><strong>{{ money(data.income.amount) }}</strong><small>Sales and transfers received · {{ data.income.count }}</small></div>
+            }
+            @if (data.transfers.count) {
+              <a class="kpi reveal" style="--i: 5" routerLink="/library" [queryParams]="{ category: 'Transfers', month: month() }"><span class="kpi-icon"><ion-icon name="swap-horizontal-outline" aria-hidden="true" /></span><span class="kpi-label">Transfers</span><strong>{{ money(data.transfers.amount) }}</strong><small>Sent to people · not counted as spending</small></a>
             }
           </section>
 
@@ -101,7 +112,8 @@ interface Column {
               </table>
             } @else {
               <div class="column-chart" (pointerleave)="hovered.set(null)">
-                <svg [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height" role="img" [attr.aria-label]="trendSummary()">
+                <!-- A labelled group, not role="img": the bars inside are buttons screen readers must reach. -->
+                <svg [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height" role="group" [attr.aria-label]="trendSummary()">
                   @for (tick of ticks(); track tick.value) {
                     <line class="grid" [attr.x1]="chart.left" [attr.x2]="chart.width - chart.right" [attr.y1]="tick.y" [attr.y2]="tick.y" />
                     <text class="tick" [attr.x]="chart.left - 8" [attr.y]="tick.y + 4" text-anchor="end">{{ compact(tick.value) }}</text>
@@ -138,8 +150,10 @@ interface Column {
               <ol class="bar-list">
                 @for (category of data.categories; track category.name; let i = $index) {
                   <li [style.--i]="i">
-                    <div class="bar-row"><span class="bar-name">{{ category.name }}</span><span class="bar-value num">{{ money(category.amount) }}</span><span class="bar-share num">{{ percent(category.share) }}</span></div>
-                    <span class="bar-track" aria-hidden="true"><span class="bar-fill" [style.--w]="category.amount / data.categories[0].amount"></span></span>
+                    <a class="bar-link" routerLink="/library" [queryParams]="{ category: category.name, month: month() }" [attr.aria-label]="category.name + ', ' + money(category.amount) + '. Show these receipts'">
+                      <div class="bar-row"><span class="bar-name">{{ category.name }}</span><span class="bar-value num">{{ money(category.amount) }}</span><span class="bar-share num">{{ percent(category.share) }}</span></div>
+                      <span class="bar-track" aria-hidden="true"><span class="bar-fill" [style.--w]="category.amount / data.categories[0].amount"></span></span>
+                    </a>
                   </li>
                 }
               </ol>
@@ -154,9 +168,11 @@ interface Column {
               <ol class="merchant-list">
                 @for (merchant of data.merchants; track merchant.name; let i = $index) {
                   <li>
-                    <span class="merchant-rank num">{{ i + 1 }}</span>
-                    <span class="merchant-name">{{ merchant.name }}<small>{{ merchant.count }} {{ merchant.count === 1 ? 'visit' : 'visits' }}</small></span>
-                    <strong class="num">{{ money(merchant.amount) }}</strong>
+                    <a class="merchant-link" routerLink="/library" [queryParams]="{ q: merchant.name, month: month() }">
+                      <span class="merchant-rank num">{{ i + 1 }}</span>
+                      <span class="merchant-name">{{ merchant.name }}<small>{{ merchant.count }} {{ merchant.count === 1 ? 'visit' : 'visits' }}</small></span>
+                      <strong class="num">{{ money(merchant.amount) }}</strong>
+                    </a>
                   </li>
                 }
               </ol>
@@ -176,7 +192,8 @@ export class InsightsPage {
   protected readonly chart = CHART;
   protected readonly baseline = CHART.height - CHART.bottom;
 
-  private readonly currentMonth = monthKeyOf(new Date());
+  protected readonly currentMonth = monthKeyOf(new Date());
+  protected readonly abs = Math.abs;
   // Opens on the newest month with spending; the user's choice holds until that month changes (a new receipt elsewhere).
   private readonly opening = computed(() => openingMonth(this.store.items(), this.currentMonth));
   protected readonly month = linkedSignal(() => this.opening());
@@ -220,8 +237,10 @@ export class InsightsPage {
   });
   /** One plain sentence about the top category, split into words for the scroll reveal. */
   protected readonly story = computed(() => {
-    const top = this.insights()?.categories[0];
-    if (!top) return [];
+    const categories = this.insights()?.categories ?? [];
+    // "Food took 100%" says nothing; the sentence only earns its place when there's a comparison.
+    if (categories.length < 2) return [];
+    const top = categories[0];
     const name = top.name.split(' ');
     const words = [...name, 'took', this.percent(top.share), 'of', 'everything', 'you', 'spent', 'in', `${this.monthName()}.`];
     return words.map((text, i) => ({ text, key: i < name.length || i === name.length + 1, p: i / (words.length - 1) }));
@@ -232,7 +251,7 @@ export class InsightsPage {
     new Intl.NumberFormat(undefined, { style: 'currency', currency: this.currency() ?? 'PHP' }).format(minor / 100);
 
   constructor() {
-    addIcons({ arrowDown, arrowUp, chevronBack, chevronForward, gridOutline, receiptOutline, storefrontOutline, trophyOutline });
+    addIcons({ arrowDown, arrowUp, chevronBack, chevronForward, gridOutline, receiptOutline, storefrontOutline, swapHorizontalOutline, trophyOutline });
     void this.store.load();
     // "?month=2026-05" (from the save message's Show button) opens that month.
     inject(ActivatedRoute).queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {

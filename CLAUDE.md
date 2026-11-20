@@ -41,6 +41,8 @@ Release builds are only signed when `android/keystore.properties` exists (gitign
 - **PWA (web build only):** `angular.json` defines `PWA` as `false` except in the `web` configuration, which also adds `ngsw-config.json` (Angular service worker) and the `web/` folder (manifest, icons). `main.ts` registers the worker and manifest link behind `if (PWA)`, so the Android bundle contains none of it. Fonts and app code are cached on install; OCR files only when first used.
 - **Dates:** an item's date is its purchase date, falling back to the day it was saved: `itemDateKey()` / `itemDate()` in `core/utils/item-display.ts`. Cards, Library sorting and month groups, Home and Insights all use it; show `createdAt` only where the UI says "Saved".
 - **Receipt maker:** `core/receipts/` renders receipt PNGs for purchases with no receipt and for sales (`flow: 'income'`; sales never count as spending).
+- **What counts as spending:** `countsAsSpending()` in `item-display.ts` (receipt with an amount, not `flow: 'income'`, not the `Transfers` category). Every total (Home, Library month headers, Insights) goes through it; Insights shows money in and transfers separately. Transfers are a category, not a third `flow` value, because the SQLite `flow` column has a `CHECK (expense, income)` constraint.
+- **Unsaved forms:** Add, Edit and the receipt maker implement `confirmLeave()` and their routes use the `confirmDiscard` guard (`core/utils/confirm-discard.ts`), so Cancel, the back arrow and Android back ask before discarding input.
 
 ## Constraints
 

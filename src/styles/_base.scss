@@ -32,11 +32,18 @@ ion-header:not(.detail-header) ion-toolbar { --background: rgba(var(--ion-backgr
 ion-title { font-weight: 780; letter-spacing: -.02em; }
 ion-button { --border-radius: 14px; text-transform: none; letter-spacing: 0; font-weight: 700; }
 // Material back buttons default to all caps ("CANCEL"); the app's controls are sentence case.
-ion-back-button { text-transform: none; letter-spacing: 0; }
+ion-back-button { text-transform: none; letter-spacing: 0; min-height: 48px; }
+ion-toolbar ion-button { min-height: 48px; min-width: 48px; }
 // Toggle labels hold a title and a description; Ionic clips them to one line.
 ion-toggle::part(label) { white-space: normal; overflow: visible; }
 ion-button[fill='solid']:not([color]), ion-button:not([fill]):not([color]) { --box-shadow: var(--sn-shadow-primary); }
-ion-toast { --border-radius: 16px; --box-shadow: var(--sn-shadow-3); --start: 16px; --end: 16px; font-weight: 600; }
+// One dark ink toast in both themes, with mint actions: Undo and See … must read at a glance (15:1 text, 8.6:1 buttons).
+ion-toast { --background: #15201d; --color: #f2f5f3; --button-color: #78c9b0; --border-radius: 16px; --box-shadow: var(--sn-shadow-3); --start: 16px; --end: 16px; font-weight: 600; }
+ion-toast::part(button) { min-height: 48px; font-weight: 800; text-transform: none; letter-spacing: 0; }
+// Material dialogs shout in caps; the app's buttons are sentence case.
+ion-alert .alert-button { text-transform: none; letter-spacing: 0; }
+// Destructive alert buttons (Discard, Erase everything) must not look like Cancel.
+ion-alert .alert-button.alert-danger { color: var(--ion-color-danger); font-weight: 800; }
 ion-alert .alert-wrapper { border-radius: var(--sn-radius-lg) !important; }
 ion-popover { --border-radius: var(--sn-radius-md); --box-shadow: var(--sn-shadow-3); }
 
