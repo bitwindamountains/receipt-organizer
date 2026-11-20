@@ -1,5 +1,6 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonHeader, IonIcon, IonTitle, IonToolbar } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, chevronBack, chevronForward, gridOutline, receiptOutline, storefrontOutline, trophyOutline } from 'ionicons/icons';
@@ -65,6 +66,7 @@ interface Column {
                 <span class="delta">Nothing to compare with {{ previousName() }}</span>
               }
               <span class="hero-count">{{ data.receiptCount }} {{ data.receiptCount === 1 ? 'receipt' : 'receipts' }}</span>
+              <span class="hero-count">{{ money(data.allTime.amount) }} all time · {{ data.allTime.count }} {{ data.allTime.count === 1 ? 'receipt' : 'receipts' }}</span>
             </div>
           </section>
 
@@ -232,6 +234,11 @@ export class InsightsPage {
   constructor() {
     addIcons({ arrowDown, arrowUp, chevronBack, chevronForward, gridOutline, receiptOutline, storefrontOutline, trophyOutline });
     void this.store.load();
+    // "?month=2026-05" (from the save message's Show button) opens that month.
+    inject(ActivatedRoute).queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const month = params.get('month');
+      if (month && /^\d{4}-(0[1-9]|1[0-2])$/.test(month) && month <= this.currentMonth) this.month.set(month);
+    });
   }
 
   /** +1 goes back a month, -1 forward, staying between the first receipt and now. */

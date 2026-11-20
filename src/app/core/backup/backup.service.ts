@@ -6,9 +6,10 @@ import { SavedItem } from '../models/saved-item';
 import { CategoryStore } from '../services/category.store';
 import { ImageStorageService } from '../services/image-storage.service';
 import { ItemStore } from '../services/item.store';
+import { localDateKey } from '../utils/item-display';
 import { BackupError, createBackupWriter, isBackupEntry, parseCategories, parseItems, parseManifest, readBackup, sha256 } from './backup-format';
 
-export const APP_VERSION = '0.4.1';
+export const APP_VERSION = '0.4.2';
 const BACKUP_DIR = 'backups';
 
 export interface ExportResult {
@@ -34,7 +35,8 @@ export class BackupService {
   async export(): Promise<ExportResult> {
     await this.store.load();
     const items = [...this.store.items()];
-    const fileName = `starlog-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+    // Local date: in the Philippines (UTC+8) the UTC date is still yesterday until 8 AM.
+    const fileName = `starlog-backup-${localDateKey(new Date())}.zip`;
     const output = Capacitor.isNativePlatform() ? await this.nativeOutput(fileName) : this.browserOutput(fileName);
     const writer = createBackupWriter(output.write, APP_VERSION);
     const included: SavedItem[] = [];
