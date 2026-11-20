@@ -62,12 +62,12 @@ export function monthLabel(monthKey: string, style: 'long' | 'short' = 'long', w
 
 const isMoneyReceipt = (item: SavedItem) => item.type === 'receipt' && item.amountMinor !== null && Boolean(item.currencyCode);
 
-/** The currency most spending receipts use; insights are shown in it. */
+/** The currency most spending receipts use (money-in receipts when there's no spending); insights are shown in it. */
 export function primaryCurrency(items: SavedItem[]): string | null {
+  const money = items.filter(isMoneyReceipt);
+  const spending = money.filter((item) => item.flow !== 'income');
   const counts = new Map<string, number>();
-  for (const item of items) {
-    if (isMoneyReceipt(item) && item.flow !== 'income') counts.set(item.currencyCode!, (counts.get(item.currencyCode!) ?? 0) + 1);
-  }
+  for (const item of spending.length ? spending : money) counts.set(item.currencyCode!, (counts.get(item.currencyCode!) ?? 0) + 1);
   return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 }
 
@@ -78,6 +78,18 @@ export function availableMonths(items: SavedItem[], latest: string): string[] {
   const months: string[] = [];
   for (let key = latest; key >= earliest; key = shiftMonth(key, -1)) months.push(key);
   return months;
+}
+
+/**
+ * The month Insights should open on: `latest` when it has money in or out, else the newest
+ * earlier month that does, so a receipt dated in May isn't hidden behind an empty November.
+ */
+export function openingMonth(items: SavedItem[], latest: string): string {
+  return items
+    .filter(isMoneyReceipt)
+    .map((item) => receiptDay(item).slice(0, 7))
+    .filter((key) => key <= latest)
+    .reduce<string | null>((newest, key) => (key === latest || !newest || key > newest ? key : newest), null) ?? latest;
 }
 
 export function buildInsights(items: SavedItem[], monthKey: string, currency: string, trendLength = 6): MonthInsights {

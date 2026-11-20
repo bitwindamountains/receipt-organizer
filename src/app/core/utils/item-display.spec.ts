@@ -29,6 +29,10 @@ describe('item display utilities', () => {
   it('searches category, metadata, and tags without case sensitivity', () => {
     expect(matchesQuery(item, '  TWO   year ')).toBe(true);
     expect(matchesQuery(item, 'ELECTRONICS')).toBe(true);
+    // Amounts match however they're typed.
+    const paid = { ...item, amountMinor: 130000 };
+    expect(['1300', '1300.00', '1,300.00'].every((query) => matchesQuery(paid, query))).toBe(true);
+    expect(matchesQuery(paid, '1301')).toBe(false);
     expect(matchesQuery(item, 'laptop')).toBe(true);
     expect(matchesQuery(item, 'grocery')).toBe(false);
   });

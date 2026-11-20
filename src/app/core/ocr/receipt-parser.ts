@@ -1,4 +1,4 @@
-import { ItemType, SavedItem } from '../models/saved-item';
+import { ItemFlow, ItemType, SavedItem } from '../models/saved-item';
 
 /** What the text on an image suggests. Fields are null when nothing reliable was found. */
 export interface ReceiptSuggestion {
@@ -8,7 +8,16 @@ export interface ReceiptSuggestion {
   currencyCode: string | null;
   purchaseDate: string | null;
   category: string | null;
+  /** 'income' only for clear money-in wording, so spending totals don't count it. */
+  flow: ItemFlow;
+  /** Wallet or bank names seen on the image, lower-case, for search ("gcash"). */
+  tags: string[];
 }
+
+// Only wording that means the user got the money. "Payment received" and "Received from" are left out:
+// stores print them on the payer's own receipt.
+const MONEY_IN = /\b(you(?:'ve| have)? received|you got|sent you|cash[- ]?in|credited to your)\b/i;
+const WALLETS = ['GCash', 'Maya', 'ShopeePay', 'GrabPay', 'GoTyme', 'SeaBank', 'UnionBank', 'BPI', 'BDO', 'Metrobank', 'LANDBANK'];
 
 const RECEIPT_WORDS = /\b(total|subtotal|sub-total|amount due|cash|change|vat|vatable|receipt|invoice|qty|tin|cashier|transaction|ref(?:erence)? no|amount|paid|payment|balance)\b/gi;
 
@@ -75,6 +84,8 @@ export function parseReceiptText(rawText: string, options: { fileName?: string; 
     currencyCode: amount !== null ? findCurrency(text) : null,
     purchaseDate: isReceipt ? findDate(text, options.today ?? new Date()) : null,
     category: suggestCategory(merchant, text, isReceipt ? 'receipt' : 'screenshot', options.history ?? [], options.categories),
+    flow: isReceipt && MONEY_IN.test(text) ? 'income' : 'expense',
+    tags: WALLETS.filter((name) => new RegExp(`\\b${name}\\b`, 'i').test(text)).map((name) => name.toLowerCase()),
   };
 }
 

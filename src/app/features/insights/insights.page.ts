@@ -1,10 +1,10 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IonButton, IonContent, IonHeader, IonIcon, IonTitle, IonToolbar } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, chevronBack, chevronForward, gridOutline, receiptOutline, storefrontOutline, trophyOutline } from 'ionicons/icons';
 import { ItemStore } from '../../core/services/item.store';
-import { availableMonths, buildInsights, monthKeyOf, monthLabel, primaryCurrency, shiftMonth } from '../../core/utils/insights';
+import { availableMonths, buildInsights, monthKeyOf, monthLabel, openingMonth, primaryCurrency, shiftMonth } from '../../core/utils/insights';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
 import { CountUpDirective } from '../../shared/count-up.directive';
 
@@ -175,7 +175,9 @@ export class InsightsPage {
   protected readonly baseline = CHART.height - CHART.bottom;
 
   private readonly currentMonth = monthKeyOf(new Date());
-  protected readonly month = signal(this.currentMonth);
+  // Opens on the newest month with spending; the user's choice holds until that month changes (a new receipt elsewhere).
+  private readonly opening = computed(() => openingMonth(this.store.items(), this.currentMonth));
+  protected readonly month = linkedSignal(() => this.opening());
   protected readonly hovered = signal<number | null>(null);
   protected readonly showTrendTable = signal(false);
 

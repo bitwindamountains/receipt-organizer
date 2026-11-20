@@ -1,5 +1,5 @@
 import { SavedItem } from '../models/saved-item';
-import { availableMonths, buildInsights, primaryCurrency, shiftMonth } from './insights';
+import { availableMonths, buildInsights, openingMonth, primaryCurrency, shiftMonth } from './insights';
 
 let counter = 0;
 const receipt = (fields: Partial<SavedItem>): SavedItem => ({
@@ -21,6 +21,23 @@ const items: SavedItem[] = [
 ];
 
 describe('insights', () => {
+  it('opens on this month when it has spending, else the newest month that does', () => {
+    expect(openingMonth(items, '2026-10')).toBe('2026-10');
+    // November is empty, so the October receipts must not be hidden behind it.
+    expect(openingMonth(items, '2026-11')).toBe('2026-10');
+    // Only a May receipt: open on May. Future-dated receipts don't count.
+    const mayOnly = [receipt({ purchaseDate: '2026-05-09' }), receipt({ purchaseDate: '2027-01-01' })];
+    expect(openingMonth(mayOnly, '2026-11')).toBe('2026-05');
+    expect(openingMonth([], '2026-11')).toBe('2026-11');
+  });
+
+  it('still shows money in when there is no spending at all', () => {
+    const receivedOnly = [receipt({ purchaseDate: '2026-05-09', flow: 'income', amountMinor: 15000 })];
+    expect(primaryCurrency(receivedOnly)).toBe('PHP');
+    expect(openingMonth(receivedOnly, '2026-11')).toBe('2026-05');
+    expect(buildInsights(receivedOnly, '2026-05', 'PHP')).toEqual(expect.objectContaining({ spent: 0, income: { amount: 15000, count: 1 } }));
+  });
+
   it('summarizes one month of spending in a single currency', () => {
     const result = buildInsights(items, '2026-10', 'PHP');
     expect(result.spent).toBe(100000);

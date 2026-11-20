@@ -15,7 +15,7 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, albumsOutline, close, cloudOfflineOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline } from 'ionicons/icons';
+import { add, albumsOutline, close, cloudOfflineOutline, documentTextOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline } from 'ionicons/icons';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
@@ -144,6 +144,11 @@ import { DemoService } from '../../core/demo/demo.service';
 
         <p class="group-title">Privacy controls</p>
         <ion-list inset="true" class="reveal" style="--i: 3">
+          <!-- Absolute URL: the Android app has no copy of the page; Capacitor opens it in the browser. -->
+          <ion-item href="https://starlog-receipts.netlify.app/privacy-policy.html" target="_blank" rel="noopener" [detail]="true">
+            <ion-icon slot="start" name="document-text-outline" aria-hidden="true" />
+            <ion-label><h3>Privacy policy</h3><p>What Starlog does with your data</p></ion-label>
+          </ion-item>
           <!-- Disabled mid demo load: the load would keep saving receipts after the erase. -->
           <ion-item button lines="none" [disabled]="demo.busy()" (click)="confirmErase()" [detail]="false">
             <ion-icon slot="start" color="danger" name="trash-outline" aria-hidden="true" />
@@ -173,7 +178,7 @@ export class SettingsPage {
   protected readonly demo = inject(DemoService);
 
   constructor() {
-    addIcons({ add, albumsOutline, close, cloudOfflineOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline });
+    addIcons({ add, albumsOutline, close, cloudOfflineOutline, documentTextOutline, downloadOutline, flashOutline, folderOpenOutline, imagesOutline, lockClosed, receiptOutline, sparklesOutline, trashOutline });
     void this.store.load();
   }
 

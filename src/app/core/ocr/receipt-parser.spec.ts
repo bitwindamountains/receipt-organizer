@@ -53,6 +53,8 @@ describe('receipt parser', () => {
       currencyCode: 'PHP',
       purchaseDate: '2026-09-28',
       category: 'Food',
+      flow: 'expense',
+      tags: [],
     });
   });
 
@@ -78,7 +80,7 @@ May 09, 2026 7:30 PM
 wv 2799 (gcoze)
 By going digital, you reduce your carbon footprint`;
     const result = parseReceiptText(ocr, { today: new Date(2026, 10, 20), fileName: 'd0315e66.jfif' });
-    expect(result).toMatchObject({ type: 'receipt', merchant: 'Jl...Y B.', amount: 150, currencyCode: 'PHP', purchaseDate: '2026-05-09' });
+    expect(result).toMatchObject({ type: 'receipt', merchant: 'Jl...Y B.', amount: 150, currencyCode: 'PHP', purchaseDate: '2026-05-09', flow: 'expense', tags: ['gcash'] });
   });
 
   it('does not take a misread peso sign or logo for pounds or yen', () => {
@@ -97,6 +99,20 @@ Claude Pro Subsc... #1,300.00
     expect(result.merchant).not.toMatch(/^</);
     expect(findCurrency('Total £12.50 GBP')).toBe('GBP');
     expect(findCurrency('Total ¥1,200')).toBe('JPY');
+  });
+
+  it('marks money the user received as income, but not a store receipt that says payment received', () => {
+    const received = `GCash
+You have received
+₱500.00
+from JU*N D.
+Ref No. 1234 567 890123
+Nov 3, 2026 2:15 PM
+Total Amount 500.00`;
+    expect(parseReceiptText(received, { today: new Date(2026, 10, 20) })).toMatchObject({ amount: 500, flow: 'income', tags: ['gcash'] });
+    const storeReceipt = `${fastFood}
+PAYMENT RECEIVED - THANK YOU`;
+    expect(parseReceiptText(storeReceipt, { today }).flow).toBe('expense');
   });
 
   it('treats a chat as a screenshot and suggests Conversations', () => {

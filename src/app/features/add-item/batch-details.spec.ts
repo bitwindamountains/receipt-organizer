@@ -15,7 +15,7 @@ const form = {
   flow: 'expense' as const,
   warrantyUntil: null,
 };
-const reading = { type: 'receipt' as const, merchant: 'Mercury Drug', amount: 89.5, currencyCode: 'PHP', purchaseDate: '2026-10-03', category: 'Health' };
+const reading = { type: 'receipt' as const, merchant: 'Mercury Drug', amount: 89.5, currencyCode: 'PHP', purchaseDate: '2026-10-03', category: 'Health', flow: 'expense' as const, tags: [] };
 
 describe('detailsForImage', () => {
   it("uses the image's own reading, not the amount read from another image", () => {
@@ -31,6 +31,12 @@ describe('detailsForImage', () => {
   it('applies what the user typed to every image', () => {
     const result = detailsForImage(form, reading, new Set(['merchant', 'amount', 'purchaseDate'] as const), 'PHP');
     expect(result).toEqual(expect.objectContaining({ merchant: 'Jollibee', amountMinor: 32000, currencyCode: 'PHP', purchaseDate: '2026-10-01' }));
+  });
+
+  it("takes money in from the image's own reading unless the user chose it", () => {
+    const received = { ...reading, flow: 'income' as const };
+    expect(detailsForImage(form, received, new Set(), 'PHP').flow).toBe('income');
+    expect(detailsForImage(form, received, new Set(['flow'] as const), 'PHP').flow).toBe('expense');
   });
 
   it('leaves screenshots unchanged', () => {

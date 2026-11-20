@@ -22,7 +22,7 @@ import {
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { add, checkmarkCircle, chevronForward, close, cloudUploadOutline, createOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline } from 'ionicons/icons';
-import { ItemType, NewSavedItem, SavedItem } from '../../core/models/saved-item';
+import { ItemFlow, ItemType, NewSavedItem, SavedItem } from '../../core/models/saved-item';
 import { CategoryStore } from '../../core/services/category.store';
 import { ImageStorageService, SelectedImage } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
@@ -33,10 +33,12 @@ import { ReceiptSuggestion, parseReceiptText } from '../../core/ocr/receipt-pars
 import { TextRecognitionService } from '../../core/ocr/text-recognition.service';
 import { parseTransaction } from '../../core/capture/transaction-parser';
 import { injectGoBack } from '../../core/utils/navigation';
+import { localDateKey } from '../../core/utils/item-display';
+import { monthLabel } from '../../core/utils/insights';
 import { ReplayAnimationDirective } from '../../shared/replay-animation.directive';
 import { TypedField, detailsForImage } from './batch-details';
 
-type AutoFillField = 'type' | 'category' | 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate';
+type AutoFillField = 'type' | 'category' | 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate' | 'flow' | 'tags';
 const MAX_IMAGES = 10;
 
 @Component({
@@ -143,6 +145,12 @@ const MAX_IMAGES = 10;
                   <ion-input formControlName="amount" label="Amount (optional)" labelPlacement="stacked" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0.00" errorText="Enter an amount of zero or more." />
                 </ion-item>
               </div>
+              <ion-item [class.auto-filled]="filled().has('flow')">
+                <ion-select formControlName="flow" label="Money" labelPlacement="stacked" interface="popover">
+                  <ion-select-option value="expense">I paid (counts as spending)</ion-select-option>
+                  <ion-select-option value="income">I received (money in)</ion-select-option>
+                </ion-select>
+              </ion-item>
               <ion-item [class.auto-filled]="filled().has('purchaseDate')"><ion-input formControlName="purchaseDate" label="Purchase date (optional)" labelPlacement="stacked" type="date" /></ion-item>
               <ion-item lines="none">
                 <ion-input formControlName="warrantyUntil" label="Warranty or return until (optional)" labelPlacement="stacked" type="date" />
@@ -229,6 +237,7 @@ export class AddItemPage implements OnInit {
     merchant: ['', Validators.maxLength(120)],
     amount: [null as number | null, Validators.min(0)],
     currencyCode: [this.preferences.lastCurrency()],
+    flow: ['expense' as ItemFlow],
     purchaseDate: [''],
     warrantyUntil: [''],
   });
@@ -265,6 +274,7 @@ export class AddItemPage implements OnInit {
       merchant: item.merchant ?? '',
       amount: item.amountMinor === null ? null : item.amountMinor / 100,
       currencyCode: item.currencyCode ?? this.preferences.lastCurrency(),
+      flow: item.flow,
       purchaseDate: item.purchaseDate ?? '',
       warrantyUntil: item.warrantyUntil ?? '',
     });
@@ -359,8 +369,8 @@ export class AddItemPage implements OnInit {
   private async detailsFor(image: SelectedImage, shared: Omit<NewSavedItem, 'imageKey' | 'mimeType'>, batch: boolean): Promise<Omit<NewSavedItem, 'imageKey' | 'mimeType'>> {
     if (!batch || shared.type !== 'receipt' || image.sourceUrl === this.autoFilledFrom) return shared;
     const controls = this.form.controls;
-    const typed = new Set((['merchant', 'amount', 'currencyCode', 'purchaseDate'] as TypedField[]).filter((field) => controls[field].dirty));
-    const needsReading = typed.size < 4 && this.preferences.autoRead() && this.recognition.canRead(image);
+    const typed = new Set((['merchant', 'amount', 'currencyCode', 'purchaseDate', 'flow'] as TypedField[]).filter((field) => controls[field].dirty));
+    const needsReading = typed.size < 5 && this.preferences.autoRead() && this.recognition.canRead(image);
     const own = needsReading ? await this.suggestionFor(image).catch(() => null) : null;
     return detailsForImage(shared, own, typed, controls.currencyCode.value);
   }
@@ -388,7 +398,9 @@ export class AddItemPage implements OnInit {
       offer('amount', suggestion.amount);
       offer('currencyCode', suggestion.currencyCode);
       offer('purchaseDate', suggestion.purchaseDate);
+      offer('flow', suggestion.flow);
     }
+    if (!before.tags.trim()) offer('tags', suggestion.tags.join(', '));
     const fields = Object.keys(changes) as AutoFillField[];
     if (!fields.length) {
       this.autoFill.set({ message: 'Nothing new to fill in', summary: suggestion.type === 'receipt' ? 'The details already match this receipt.' : 'This looks like a screenshot without receipt details.' });
@@ -402,6 +414,7 @@ export class AddItemPage implements OnInit {
       : null;
     const summary = [
       changes.type ? (changes.type === 'receipt' ? 'Receipt' : 'Screenshot') : null,
+      changes.flow === 'income' ? 'Money in' : null,
       changes.merchant ?? null,
       amount,
       changes.purchaseDate ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(changes.purchaseDate)) : null,
@@ -477,7 +490,7 @@ export class AddItemPage implements OnInit {
       }
       await this.store.update({ ...existing, ...this.details(), imageKey, mimeType: image.mimeType });
       if (persistedReplacement) await this.images.remove(existing.imageKey);
-      await this.finish('Changes saved', `/item/${existing.id}`);
+      await this.finish(`Changes saved${this.countedIn()}`, `/item/${existing.id}`);
     } catch {
       if (persistedReplacement) await this.images.remove(imageKey).catch(() => undefined);
       this.error.set('Your changes were not saved. Your details are still here so you can try again.');
@@ -508,7 +521,7 @@ export class AddItemPage implements OnInit {
     this.selection.set(failed);
     this.activeIndex.set(0);
     if (!failed.length) {
-      await this.finish(saved === 1 ? 'Saved to your library' : `${saved} images saved to your library`, '/home');
+      await this.finish(saved === 1 ? `Saved to your library${this.countedIn()}` : `${saved} images saved to your library`, '/home');
     } else if (saved) {
       const rest = failed.length === 1 ? 'One image was not saved and is' : `${failed.length} images were not saved and are`;
       this.error.set(`Saved ${saved} of ${queue.length}. ${rest} still here so you can try again.`);
@@ -536,9 +549,17 @@ export class AddItemPage implements OnInit {
       currencyCode: isReceipt && amount !== null ? value.currencyCode : null,
       purchaseDate: isReceipt ? value.purchaseDate || null : null,
       isFavorite: this.existing()?.isFavorite ?? false,
-      flow: this.existing()?.flow ?? 'expense',
+      flow: isReceipt ? value.flow : (this.existing()?.flow ?? 'expense'),
       warrantyUntil: isReceipt ? value.warrantyUntil || null : null,
     };
+  }
+
+  /** " · counted in May 2026" for a receipt dated outside this month, which Insights and Home's total won't show by default. */
+  private countedIn(): string {
+    const { type, amountMinor, purchaseDate } = this.details();
+    const month = purchaseDate?.slice(0, 7);
+    if (type !== 'receipt' || amountMinor === null || !month || month === localDateKey(new Date()).slice(0, 7)) return '';
+    return ` · counted in ${monthLabel(month, 'long', true)}`;
   }
 
   private async finish(message: string, fallback: string): Promise<void> {
@@ -561,6 +582,7 @@ interface FormValue {
   merchant: string;
   amount: number | null;
   currencyCode: string;
+  flow: ItemFlow;
   purchaseDate: string;
   warrantyUntil: string;
 }
