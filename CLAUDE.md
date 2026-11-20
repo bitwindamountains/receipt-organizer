@@ -19,7 +19,7 @@ python -I scripts/draw-icons.py . # regenerate all app icons, favicon and Androi
 node scripts/ui-audit.mjs <chrome.exe> <out-dir> <url>   # headless-Chrome screenshots at 375 px + tap-target/text-size audit (usage in file)
 ```
 
-Web hosting: Netlify site `snapsort-receipts` (https://snapsort-receipts.netlify.app). Deploy by hand after `npm run build:web` with `npx netlify-cli deploy --prod --no-build --dir dist/snapsort/browser`; the site is not linked to GitHub. Any host needs HTTPS and an SPA rewrite to `/index.html`. On this PC, `curl` to HTTPS sites needs `--ssl-no-revoke`.
+Web hosting: Netlify site `starlog-receipts` (https://starlog-receipts.netlify.app; renamed from `snapsort-receipts`, which no longer resolves). Deploy by hand after `npm run build:web` with `npx netlify-cli deploy --prod --no-build --dir dist/snapsort/browser`; the site is not linked to GitHub. Any host needs HTTPS and an SPA rewrite to `/index.html`. On this PC, `curl` to HTTPS sites needs `--ssl-no-revoke`.
 
 Android (no Android Studio needed). JDK 21 is at `C:\Program Files\Microsoft\jdk-21.0.13.21-hotspot` and is not on PATH, so set `JAVA_HOME` first:
 
