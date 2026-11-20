@@ -556,10 +556,15 @@ export class AddItemPage implements OnInit {
 
   /** " · counted in May 2026" for a receipt dated outside this month, which Insights and Home's total won't show by default. */
   private countedIn(): string {
+    const month = this.otherMonth();
+    return month ? ` · counted in ${monthLabel(month, 'long', true)}` : '';
+  }
+
+  /** The YYYY-MM a receipt with an amount counts in, when that isn't this month. */
+  private otherMonth(): string | null {
     const { type, amountMinor, purchaseDate } = this.details();
     const month = purchaseDate?.slice(0, 7);
-    if (type !== 'receipt' || amountMinor === null || !month || month === localDateKey(new Date()).slice(0, 7)) return '';
-    return ` · counted in ${monthLabel(month, 'long', true)}`;
+    return type === 'receipt' && amountMinor !== null && month && month !== localDateKey(new Date()).slice(0, 7) ? month : null;
   }
 
   private async finish(message: string, fallback: string): Promise<void> {
@@ -567,7 +572,12 @@ export class AddItemPage implements OnInit {
     if (currencyCode) this.preferences.rememberCurrency(currencyCode);
     // Ask for notification permission only once a reminder is actually wanted.
     if (warrantyUntil) void this.reminders.requestPermission();
-    const toast = await this.toastController.create({ message, duration: 1800, position: 'bottom', icon: 'checkmark-circle' });
+    const month = this.otherMonth();
+    // A receipt dated in another month doesn't move this month's totals, so offer to show where it went.
+    const toast = await this.toastController.create({
+      message, duration: month ? 5000 : 1800, position: 'bottom', icon: 'checkmark-circle',
+      buttons: month ? [{ text: 'Show', handler: () => void this.router.navigate(['/insights'], { queryParams: { month } }) }] : undefined,
+    });
     await toast.present();
     this.goBackOr(fallback);
   }

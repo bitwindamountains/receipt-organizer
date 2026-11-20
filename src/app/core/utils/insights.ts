@@ -35,6 +35,8 @@ export interface MonthInsights {
   /** The six months ending with this one, oldest first. */
   trend: MonthPoint[];
   income: { amount: number; count: number };
+  /** Every spending receipt in this currency, any month: grows with each receipt saved, whatever its date. */
+  allTime: { amount: number; count: number };
   /** Receipts this month in other currencies, left out of the totals. */
   otherCurrencyCount: number;
 }
@@ -141,6 +143,7 @@ export function buildInsights(items: SavedItem[], monthKey: string, currency: st
     merchants: [...byMerchant.values()].sort((a, b) => b.amount - a.amount || b.count - a.count).slice(0, 5),
     trend,
     income: { amount: sum(income), count: income.length },
+    allTime: { amount: sum(spending.filter(inCurrency)), count: spending.filter(inCurrency).length },
     otherCurrencyCount: month.length - counted.length,
   };
 }

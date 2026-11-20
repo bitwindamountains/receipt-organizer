@@ -7,7 +7,7 @@ import { albumsOutline, arrowForward, chevronForward, flash, receiptOutline, sta
 import { ItemStore } from '../../core/services/item.store';
 import { CaptureService } from '../../core/capture/capture.service';
 import { SavedItem } from '../../core/models/saved-item';
-import { displayTitle, monthlyReceiptSummary } from '../../core/utils/item-display';
+import { displayTitle, monthlyReceiptSummary, receiptTotal } from '../../core/utils/item-display';
 import { daysLeftLabel, endingSoon } from '../../core/utils/warranty';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
 import { CountUpDirective } from '../../shared/count-up.directive';
@@ -85,7 +85,16 @@ import { ThumbComponent } from '../../shared/thumb.component';
                 <span class="slip-meta">
                   {{ summary.count }} {{ summary.count === 1 ? 'receipt' : 'receipts' }}
                   @if (summary.otherCurrencies) { <br />+{{ summary.otherCurrencies }} other {{ summary.otherCurrencies === 1 ? 'currency' : 'currencies' }} }
+                  @if (allTime(); as all) { <br /><span class="slip-all">{{ all.total }}</span>{{ ' ' }}<span class="slip-all">all time</span> }
                 </span>
+                <span class="slip-cta">See insights <ion-icon name="arrow-forward" aria-hidden="true" /></span>
+              </a>
+            } @else if (allTime(); as all) {
+              <!-- Nothing dated this month yet: show the running total so a newly saved older receipt still shows up here. -->
+              <a class="month-slip" routerLink="/insights" [attr.aria-label]="'All receipts total ' + all.total + '. Open insights'">
+                <p class="slip-label">All receipts</p>
+                <span class="slip-total num">{{ all.total }}</span>
+                <span class="slip-meta">{{ all.count }} {{ all.count === 1 ? 'receipt' : 'receipts' }}<br />None dated this month yet</span>
                 <span class="slip-cta">See insights <ion-icon name="arrow-forward" aria-hidden="true" /></span>
               </a>
             }
@@ -199,6 +208,7 @@ export class HomePage implements OnInit {
   protected readonly query = signal('');
   protected readonly receiptCount = computed(() => this.store.items().filter((item) => item.type === 'receipt').length);
   protected readonly monthSummary = computed(() => monthlyReceiptSummary(this.store.items()));
+  protected readonly allTime = computed(() => receiptTotal(this.store.items()));
   protected readonly ending = computed(() => endingSoon(this.store.items()).slice(0, 4));
   protected readonly title = displayTitle;
   protected readonly daysLeftLabel = daysLeftLabel;

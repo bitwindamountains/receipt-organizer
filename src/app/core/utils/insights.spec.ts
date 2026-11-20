@@ -48,6 +48,8 @@ describe('insights', () => {
     expect(result.change).toBeCloseTo(1);
     expect(result.otherCurrencyCount).toBe(1);
     expect(result.income).toEqual({ amount: 80000, count: 1 });
+    // All PHP spending in any month (Oct 100,000 + Sep 50,000 + May 70,000); no USD, no money in.
+    expect(result.allTime).toEqual({ amount: 220000, count: 5 });
   });
 
   it('ranks categories with shares and merges merchants case-insensitively', () => {
