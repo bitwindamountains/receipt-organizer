@@ -1,4 +1,4 @@
-# SnapSort Production Plan
+# Starlog Production Plan
 
 **Status:** Implementation-ready plan  
 **Release target:** Android first; iOS after Android product validation  
@@ -7,7 +7,7 @@
 
 ## 1. Product decision
 
-SnapSort helps a user save an important screenshot or receipt now and find it again in seconds later. Version 1 is an offline-first organizer, not a replacement gallery, expense platform, or AI product.
+Starlog helps a user save an important screenshot or receipt now and find it again in seconds later. Version 1 is an offline-first organizer, not a replacement gallery, expense platform, or AI product.
 
 The core promise is:
 
@@ -162,7 +162,7 @@ Acceptance criteria:
 - Missing optional metadata is hidden rather than shown as blank rows.
 - Edit warns before discarding unsaved changes.
 - Share exports a temporary readable copy through the native share sheet and cleans it later.
-- Delete explains that the SnapSort copy and metadata are removed while the original gallery image remains.
+- Delete explains that the Starlog copy and metadata are removed while the original gallery image remains.
 - Offer Undo for a short window; remove files permanently after the undo window or next cleanup.
 
 ### 5.5 Categories
