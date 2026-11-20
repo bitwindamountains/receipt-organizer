@@ -126,7 +126,7 @@ Fixes in the same pass:
 ## Release blockers
 
 - Upload key (`android/keystore.properties`) and a signed AAB; install and smoke-test on a physical Android 13+ device (rename, icons, demo load time, animations)
-- Name check: Play Store and trademark search for "Starlog" before the listing
+- Name: keep Starlog with a descriptor. Play title "Starlog: Receipt Organizer" (web manifest `name` matches; launcher label and `short_name` stay "Starlog"). Another "StarLog" exists (an astronomy log app, `jvc.starlog`, last updated 2019) and US STARLOG marks are mostly dead and in unrelated classes; still search IPOPHL (Philippines) before launch.
 - Play Console: notification-listener and `READ_MEDIA_IMAGES` declarations (photo picker may be required), Data safety, content rating, store assets
 - Replace privacy-policy placeholders (contact details) and host the policy on a stable HTTPS URL
 - Real GCash/Maya/bank notification wording for auto-capture
