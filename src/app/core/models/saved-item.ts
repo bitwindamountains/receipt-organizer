@@ -37,5 +37,6 @@ export const DEFAULT_CATEGORIES = [
   'Bills',
   'Transport',
   'Electronics',
+  'Transfers',
   'Other',
 ] as const;

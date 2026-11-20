@@ -1,5 +1,5 @@
 import { SavedItem } from '../models/saved-item';
-import { displayTitle, formatAmount, groupByMonth, itemDate, itemDateKey, matchesQuery, monthlyReceiptSummary } from './item-display';
+import { displayTitle, findDuplicate, formatAmount, groupByMonth, itemDate, itemDateKey, matchesQuery, merchantSuggestions, monthlyReceiptSummary } from './item-display';
 
 const item: SavedItem = {
   id: 'one',
@@ -22,6 +22,24 @@ const item: SavedItem = {
 };
 
 describe('item display utilities', () => {
+  it('finds a receipt already saved with the same amount and date', () => {
+    expect(findDuplicate([item], 4999500, '2026-09-11')?.id).toBe('one');
+    expect(findDuplicate([item], 4999500, '2026-09-12')).toBeNull();
+    expect(findDuplicate([item], 100, '2026-09-11')).toBeNull();
+    // Editing the item itself is not a duplicate; blanks never match.
+    expect(findDuplicate([item], 4999500, '2026-09-11', 'one')).toBeNull();
+    expect(findDuplicate([item], null, '2026-09-11')).toBeNull();
+  });
+
+  it('suggests past merchants, most used first, filtered by what is typed', () => {
+    const items = [item, { ...item, id: 'b', merchant: 'Jollibee' }, { ...item, id: 'c', merchant: 'jollibee ' }, { ...item, id: 'd', merchant: 'Meralco' }];
+    expect(merchantSuggestions(items, '')).toEqual(['Jollibee', 'Lenovo Store', 'Meralco']);
+    expect(merchantSuggestions(items, 'ra')).toEqual(['Meralco']);
+    // What's already typed exactly isn't offered again.
+    expect(merchantSuggestions(items, 'Meralco')).toEqual([]);
+    expect(merchantSuggestions(items, '', 1)).toEqual(['Jollibee']);
+  });
+
   it('uses the merchant when an item has no title', () => {
     expect(displayTitle(item)).toBe('Lenovo Store');
   });

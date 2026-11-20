@@ -557,6 +557,13 @@ legend { margin-bottom: 10px; padding: 0; font-weight: 750; }
 .receipt-fields { border-color: rgba(var(--ion-color-secondary-rgb), .35); }
 .amount-row { display: grid; grid-template-columns: 120px 1fr; }
 .form-error { margin: 0; padding: 12px 14px; border-radius: 14px; background: rgba(var(--ion-color-danger-rgb), .1); color: var(--ion-color-danger-shade); font-weight: 600; }
+// A heads-up, not an error: the user may still save.
+.form-note { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--sn-primary-soft); color: var(--sn-primary-ink); font-weight: 600; }
+.form-note a { color: inherit; }
+// Merchant suggestions under the Merchant field.
+// .chip-row bleeds to the screen edge on Home; inside a form card it must stay within the card.
+.chip-row.form-chips { margin-inline: 0; padding: 4px 16px 12px; scroll-padding-inline: 16px; }
+.form-chips .cat-chip { flex: none; padding-inline: 16px; }
 .save-button { min-height: 56px; margin: 4px 0 28px; font-weight: 760; }
 .save-button ion-spinner { width: 20px; height: 20px; margin-right: 8px; }
 

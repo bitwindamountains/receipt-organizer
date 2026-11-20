@@ -29,11 +29,11 @@ import { ItemStore } from '../../core/services/item.store';
 import { CaptureService } from '../../core/capture/capture.service';
 import { PreferencesStore } from '../../core/services/preferences.store';
 import { ReminderService } from '../../core/services/reminder.service';
-import { ReceiptSuggestion, parseReceiptText } from '../../core/ocr/receipt-parser';
+import { ReceiptSuggestion, parseReceiptText, suggestCategory } from '../../core/ocr/receipt-parser';
 import { TextRecognitionService } from '../../core/ocr/text-recognition.service';
 import { parseTransaction } from '../../core/capture/transaction-parser';
 import { injectGoBack } from '../../core/utils/navigation';
-import { localDateKey } from '../../core/utils/item-display';
+import { displayTitle, findDuplicate, formatAmount, localDateKey, merchantSuggestions } from '../../core/utils/item-display';
 import { monthLabel } from '../../core/utils/insights';
 import { ReplayAnimationDirective } from '../../shared/replay-animation.directive';
 import { TypedField, detailsForImage } from './batch-details';
@@ -137,6 +137,11 @@ const MAX_IMAGES = 10;
             <div class="form-card receipt-fields" animate.enter="enter-expand" animate.leave="leave-fade">
               <p class="form-card-label">Receipt details</p>
               <ion-item [class.auto-filled]="filled().has('merchant')"><ion-input formControlName="merchant" label="Merchant (optional)" labelPlacement="stacked" placeholder="Where was this from?" [maxlength]="120" /></ion-item>
+              @if (merchantOptions().length) {
+                <div class="chip-row form-chips" role="group" aria-label="Merchants you've used">
+                  @for (name of merchantOptions(); track name) { <button type="button" class="cat-chip" (click)="pickMerchant(name)">{{ name }}</button> }
+                </div>
+              }
               <div class="amount-row">
                 <ion-item [class.auto-filled]="filled().has('currencyCode')"><ion-select formControlName="currencyCode" label="Currency" labelPlacement="stacked" interface="popover">
                   @for (currency of currencies; track currency) { <ion-select-option [value]="currency">{{ currency }}</ion-select-option> }
@@ -170,6 +175,9 @@ const MAX_IMAGES = 10;
             <ion-item lines="none"><ion-textarea formControlName="notes" label="Notes (optional)" labelPlacement="stacked" [autoGrow]="true" [maxlength]="1000" /></ion-item>
           </div>
 
+          @if (duplicate(); as dup) {
+            <p class="form-note" role="status">Looks like you saved this already: <a [routerLink]="['/item', dup.id]">{{ title(dup) }}</a> · {{ amountOf(dup) }}. You can still save it.</p>
+          }
           @if (error()) { <p class="form-error" role="alert" animate.enter="enter-fade">{{ error() }}</p> }
           @if (progress(); as p) {
             <div class="save-progress" role="progressbar" aria-label="Saving images" [attr.aria-valuenow]="p.done" aria-valuemin="0" [attr.aria-valuemax]="p.total">
@@ -184,6 +192,9 @@ const MAX_IMAGES = 10;
               {{ existing() ? 'Save changes' : isBatch() ? 'Save ' + selection().length + ' images' : 'Save image' }}
             }
           </ion-button>
+          @if (!existing()) {
+            <ion-button fill="clear" expand="block" size="large" type="button" (click)="save(true)" [disabled]="saving() || !selection().length">Save and add another</ion-button>
+          }
         </form>
       </main>
     </ion-content>
@@ -245,6 +256,22 @@ export class AddItemPage implements OnInit {
     initialValue: this.form.controls.type.value,
   });
   protected readonly isReceipt = computed(() => this.selectedType() === 'receipt');
+  private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  /** Items saved from this form, so it never warns that a receipt duplicates itself. */
+  private readonly savedHere = signal<ReadonlySet<string>>(new Set());
+  /** A saved receipt with the same amount and date: warn, but let them save (two coffees on one day happen). */
+  protected readonly duplicate = computed(() => {
+    const value = this.formValue();
+    if (!this.isReceipt() || this.isBatch() || value.amount === null || value.amount === undefined || !value.purchaseDate) return null;
+    const amount = Number(value.amount);
+    if (!Number.isFinite(amount)) return null;
+    const others = this.store.items().filter((item) => !this.savedHere().has(item.id));
+    return findDuplicate(others, Math.round(amount * 100), value.purchaseDate, this.existing()?.id);
+  });
+  /** Past merchants matching what's typed, or the most used ones while the field is empty. */
+  protected readonly merchantOptions = computed(() => this.isReceipt() ? merchantSuggestions(this.store.items(), this.formValue().merchant ?? '') : []);
+  protected readonly title = displayTitle;
+  protected readonly amountOf = formatAmount;
 
   constructor() {
     addIcons({ add, checkmarkCircle, chevronForward, close, cloudUploadOutline, createOutline, phonePortraitOutline, receiptOutline, sparkles, swapHorizontalOutline });
@@ -257,6 +284,9 @@ export class AddItemPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    // Add can be the first screen (shared from another app, or a reload): the duplicate check,
+    // merchant suggestions and learned categories all need the library loaded.
+    void this.store.load();
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
     const item = await this.store.byId(id);
@@ -460,7 +490,7 @@ export class AddItemPage implements OnInit {
     }
   }
 
-  async save(): Promise<void> {
+  async save(again = false): Promise<void> {
     if (!this.selection().length || this.saving()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -472,7 +502,7 @@ export class AddItemPage implements OnInit {
     try {
       const existing = this.existing();
       if (existing) await this.saveEdit(existing);
-      else await this.saveNew();
+      else await this.saveNew(again);
     } finally {
       this.saving.set(false);
       this.progress.set(null);
@@ -498,7 +528,7 @@ export class AddItemPage implements OnInit {
   }
 
   /** Saves each image in turn. Images that fail stay selected so they can be retried. */
-  private async saveNew(): Promise<void> {
+  private async saveNew(again = false): Promise<void> {
     const queue = this.selection();
     const details = this.details();
     const batch = queue.length > 1;
@@ -510,7 +540,8 @@ export class AddItemPage implements OnInit {
       try {
         const own = await this.detailsFor(image, details, batch);
         imageKey = await this.images.persist(crypto.randomUUID(), image);
-        await this.store.create({ ...own, imageKey, mimeType: image.mimeType });
+        const created = await this.store.create({ ...own, imageKey, mimeType: image.mimeType });
+        this.savedHere.update((ids) => new Set(ids).add(created.id));
         this.images.release(image.sourceUrl);
         saved += 1;
       } catch {
@@ -521,7 +552,7 @@ export class AddItemPage implements OnInit {
     this.selection.set(failed);
     this.activeIndex.set(0);
     if (!failed.length) {
-      await this.finish(saved === 1 ? `Saved to your library${this.countedIn()}` : `${saved} images saved to your library`, '/home');
+      await this.finish(saved === 1 ? `Saved to your library${this.countedIn()}` : `${saved} images saved to your library`, '/home', again);
     } else if (saved) {
       const rest = failed.length === 1 ? 'One image was not saved and is' : `${failed.length} images were not saved and are`;
       this.error.set(`Saved ${saved} of ${queue.length}. ${rest} still here so you can try again.`);
@@ -567,7 +598,7 @@ export class AddItemPage implements OnInit {
     return type === 'receipt' && amountMinor !== null && month && month !== localDateKey(new Date()).slice(0, 7) ? month : null;
   }
 
-  private async finish(message: string, fallback: string): Promise<void> {
+  private async finish(message: string, fallback: string, stay = false): Promise<void> {
     const { currencyCode, warrantyUntil } = this.details();
     if (currencyCode) this.preferences.rememberCurrency(currencyCode);
     // Ask for notification permission only once a reminder is actually wanted.
@@ -579,7 +610,27 @@ export class AddItemPage implements OnInit {
       buttons: month ? [{ text: 'Show', handler: () => void this.router.navigate(['/insights'], { queryParams: { month } }) }] : undefined,
     });
     await toast.present();
-    this.goBackOr(fallback);
+    if (stay) this.startOver();
+    else this.goBackOr(fallback);
+  }
+
+  /** "Save and add another": an empty form for the next receipt, keeping the currency. */
+  private startOver(): void {
+    this.form.reset({ currencyCode: this.preferences.lastCurrency() });
+    this.autoFill.set(null);
+    this.filled.set(new Set());
+    this.autoFilledFrom = null;
+    this.savedHere.set(new Set());
+    void this.host.querySelector('ion-content')?.scrollToTop(300);
+  }
+
+  /** Fills a merchant used before and, unless a category was chosen, the category used for it last time. */
+  pickMerchant(name: string): void {
+    const { merchant, category } = this.form.controls;
+    merchant.setValue(name);
+    merchant.markAsDirty();
+    const usual = suggestCategory(name, '', 'receipt', this.store.items(), this.categories.all());
+    if (usual && !category.dirty) category.setValue(usual);
   }
 }
 

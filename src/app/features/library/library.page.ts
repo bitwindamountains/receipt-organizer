@@ -23,7 +23,7 @@ import { ItemStore } from '../../core/services/item.store';
 import { MonthGroup, displayTitle, groupByMonth, itemDateKey, matchesQuery } from '../../core/utils/item-display';
 import { ItemCardComponent } from '../../shared/item-card/item-card.component';
 
-type SortOrder = 'newest' | 'oldest' | 'title';
+type SortOrder = 'newest' | 'oldest' | 'amount' | 'title';
 
 @Component({
   selector: 'app-library',
@@ -47,6 +47,7 @@ type SortOrder = 'newest' | 'oldest' | 'title';
           <ion-select class="filter-select" aria-label="Sort order" interface="popover" [value]="sort()" (ionChange)="setSort($event)">
             <ion-select-option value="newest">Newest first</ion-select-option>
             <ion-select-option value="oldest">Oldest first</ion-select-option>
+            <ion-select-option value="amount">Highest amount</ion-select-option>
             <ion-select-option value="title">Title A-Z</ion-select-option>
           </ion-select>
           <button type="button" class="fav-toggle" [class.is-on]="favoriteOnly()" [attr.aria-pressed]="favoriteOnly()" (click)="toggleFavorites()">
@@ -113,8 +114,8 @@ export class LibraryPage implements OnInit {
     (this.category() === 'all' || item.category === this.category()) &&
     (!this.favoriteOnly() || item.isFavorite) && matchesQuery(item, this.query()),
   )));
-  /** Date sorts are split into months; title sort is one unlabeled group. */
-  protected readonly groups = computed<MonthGroup[]>(() => this.sort() === 'title'
+  /** Date sorts are split into months; amount and title sorts are one unlabeled group. */
+  protected readonly groups = computed<MonthGroup[]>(() => this.sort() === 'title' || this.sort() === 'amount'
     ? [{ key: 'all', label: '', items: this.results(), receipts: null }]
     : groupByMonth(this.results()));
 
@@ -142,7 +143,7 @@ export class LibraryPage implements OnInit {
     this.type.set(type === 'receipt' || type === 'screenshot' ? type : 'all');
     this.category.set(params.get('category') ?? 'all');
     this.favoriteOnly.set(params.get('favorite') === 'true');
-    this.sort.set(sort === 'oldest' || sort === 'title' ? sort : 'newest');
+    this.sort.set(sort === 'oldest' || sort === 'amount' || sort === 'title' ? sort : 'newest');
   }
 
   /** Keeps the URL in step with the filters so Home shortcuts and tab switches restore them. */
@@ -170,6 +171,8 @@ export class LibraryPage implements OnInit {
     }
     // By the date on the receipt (else the day it was saved); items from the same day keep save order.
     const byDate = (a: SavedItem, b: SavedItem) => itemDateKey(a).localeCompare(itemDateKey(b)) || a.createdAt.localeCompare(b.createdAt);
+    // Biggest first; items without an amount go last, newest first among equals.
+    if (order === 'amount') return [...items].sort((a, b) => (b.amountMinor ?? -1) - (a.amountMinor ?? -1) || byDate(b, a));
     return [...items].sort((a, b) => (order === 'oldest' ? byDate(a, b) : byDate(b, a)));
   }
 }

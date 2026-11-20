@@ -7,7 +7,8 @@ const STORAGE_KEY = 'snapsort.categories.v1';
 export class CategoryStore {
   private readonly customState = signal<string[]>(this.read());
   readonly custom = this.customState.asReadonly();
-  readonly all = computed(() => [...DEFAULT_CATEGORIES, ...this.customState()].sort((a, b) => a.localeCompare(b)));
+  // A Set: a custom category made before it became a default ("Transfers") would otherwise be listed twice.
+  readonly all = computed(() => [...new Set<string>([...DEFAULT_CATEGORIES, ...this.customState()])].sort((a, b) => a.localeCompare(b)));
 
   add(rawName: string): boolean {
     const name = rawName.trim().replace(/\s+/g, ' ');
