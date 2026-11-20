@@ -6,7 +6,7 @@ Updated: November 20, 2026 - renamed to Starlog, UI review fixes, installable we
 
 - **`main`** has everything through PR #6: demo mode (#4), PWA web build (#5), Starlog rename, green star look and UI review fixes (#6). `npm run check`: 65 tests pass, initial bundle 547 kB.
 - **Android:** 0.4.0 (`versionCode 4`) is signed with the upload key (`android/starlog-upload.jks`, alias `upload`, outside git; back it up). `bundleRelease` gives a signed AAB for Play; `assembleRelease` a signed APK. Not yet tested on a phone. JDK is now 21.0.13 (path in CLAUDE.md).
-- **Web (Netlify):** site `starlog-receipts` at https://starlog-receipts.netlify.app (renamed from `snapsort-receipts`; the old address is gone) holds the current Starlog build, uploaded by hand (`netlify deploy --prod --no-build --dir dist/snapsort/browser`), not linked to GitHub. `netlify.toml` (build command, Node 24.15.0, SPA rewrite) is on `main`. The web app reloads itself when a newer deploy is ready. Not public yet: the team's Visitor access setting requires a Netlify login; turn it off under Project configuration > Access & security > Visitor access.
+- **Web (Netlify):** site `starlog-receipts` at https://starlog-receipts.netlify.app (renamed from `snapsort-receipts`; the old address is gone) holds the current Starlog build, uploaded by hand (`netlify deploy --prod --no-build --dir dist/snapsort/browser`), not linked to GitHub. `netlify.toml` (build command, Node 24.15.0, SPA rewrite) is on `main`. The web app reloads itself when a newer deploy is ready. Public (no Netlify login) since November 21, 2026.
 - **CI:** GitHub Actions has never run on this repo, so PRs #4-#6 were merged on local checks only. Check Settings > Actions (likely an account or billing setting).
 - **Next:** merge `netlify`, rebuild and redeploy the web version; build a debug APK and check the new icon, splash and name on a phone; check "Starlog" on the Play Store and for trademarks; then the release blockers below.
 - **Ideas not built:** a comet from Save to the Library tab, constellation-style monthly chart, star-themed empty Library, renaming Favorites to "Starred".
@@ -128,7 +128,7 @@ Fixes in the same pass:
 - Upload key (`android/keystore.properties`) and a signed AAB; install and smoke-test on a physical Android 13+ device (rename, icons, demo load time, animations)
 - Name: keep Starlog with a descriptor. Play title "Starlog: Receipt Organizer" (web manifest `name` matches; launcher label and `short_name` stay "Starlog"). Another "StarLog" exists (an astronomy log app, `jvc.starlog`, last updated 2019) and US STARLOG marks are mostly dead and in unrelated classes; still search IPOPHL (Philippines) before launch.
 - Play Console: notification-listener and `READ_MEDIA_IMAGES` declarations (photo picker may be required), Data safety, content rating, store assets
-- Privacy policy: `web/privacy-policy.html`, published with the web build at https://starlog-receipts.netlify.app/privacy-policy.html (needs Visitor access off to be public). Contact is GitHub Issues; Google Play would want an email instead.
+- Privacy policy: `web/privacy-policy.html`, published with the web build at https://starlog-receipts.netlify.app/privacy-policy.html. Contact is GitHub Issues; Google Play would want an email instead.
 - Real GCash/Maya/bank notification wording for auto-capture
 - Add process-death/staging reconciliation for large imports (an interrupted batch can still leave orphaned files)
 - Complete category management (rename and merge)
