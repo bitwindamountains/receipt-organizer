@@ -64,6 +64,7 @@ describe('receipt parser', () => {
     expect(result.amount).toBe(1250);
     expect(result.currencyCode).toBe('PHP');
     expect(result.purchaseDate).toBe('2026-10-01');
+    expect(result.category).toBe('Transfers');
   });
 
   // Real browser-OCR output: Tesseract reads ₱ as "£" or "#" and the Claude logo as "¥".
@@ -80,7 +81,7 @@ May 09, 2026 7:30 PM
 wv 2799 (gcoze)
 By going digital, you reduce your carbon footprint`;
     const result = parseReceiptText(ocr, { today: new Date(2026, 10, 20), fileName: 'd0315e66.jfif' });
-    expect(result).toMatchObject({ type: 'receipt', merchant: 'Jl...Y B.', amount: 150, currencyCode: 'PHP', purchaseDate: '2026-05-09', flow: 'expense', tags: ['gcash'] });
+    expect(result).toMatchObject({ type: 'receipt', merchant: 'Jl...Y B.', amount: 150, currencyCode: 'PHP', purchaseDate: '2026-05-09', flow: 'expense', tags: ['gcash'], category: 'Transfers' });
   });
 
   it('does not take a misread peso sign or logo for pounds or yen', () => {

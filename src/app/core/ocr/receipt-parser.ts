@@ -60,6 +60,8 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   Bills: ['meralco', 'maynilad', 'manila water', 'pldt', 'globe', 'smart', 'converge', 'sky cable', 'skycable', 'internet', 'electric', 'water bill', 'statement of account', 'bill', 'insurance', 'philhealth', 'sss', 'pag-ibig', 'pagibig', 'rent', 'load'],
   Shopping: ['sm ', 'supermarket', 'puregold', 'robinsons', 'savemore', 'waltermart', 'landmark', 'mall', 'lazada', 'shopee', 'zalora', 'uniqlo', 'h&m', 'grocery', 'mart', '7-eleven', 'ministop', 'alfamart', 'watsons', 'mercury drug', 'pharmacy', 'department store', 'ace hardware', 'wilcon', 'handyman', 'daiso', 'miniso'],
   Electronics: ['abenson', 'silicon valley', 'octagon', 'samsung', 'apple', 'xiaomi', 'huawei', 'oppo', 'vivo', 'realme', 'laptop', 'gadget', 'electronics', 'power mac', 'datablitz', 'villman', 'pc express', 'asus', 'lenovo'],
+  // Money sent to a person or another account (GCash Express Send, InstaPay), not a purchase.
+  Transfers: ['express send', 'send money', 'sent via', 'sent to', 'fund transfer', 'bank transfer', 'instapay', 'pesonet', 'transfer to'],
   Travel: ['airline', 'airways', 'cebu pacific', 'philippine airlines', 'airasia', 'hotel', 'resort', 'agoda', 'booking.com', 'airbnb', 'boarding pass', 'flight', 'gate', 'seat', 'itinerary', 'check-in', '2go', 'ferry'],
   School: ['school', 'university', 'college', 'tuition', 'national book store', 'nbs', 'bookstore', 'enrollment', 'enrolment', 'academy'],
   Documents: ['certificate', 'license', 'licence', 'passport', 'identification', 'birth', 'nbi clearance', 'clearance', 'contract', 'agreement', 'permit'],

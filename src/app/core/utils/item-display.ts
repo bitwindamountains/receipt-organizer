@@ -48,6 +48,33 @@ export function matchesQuery(item: SavedItem, rawQuery: string): boolean {
   return terms.every((term) => haystack.includes(term));
 }
 
+/**
+ * A saved receipt with the same amount on the same date: most likely this purchase saved
+ * before. Used to warn on Add and to flag inbox screenshots. `excludeId` skips the item being edited.
+ */
+export function findDuplicate(items: SavedItem[], amountMinor: number | null, purchaseDate: string | null, excludeId?: string): SavedItem | null {
+  if (amountMinor === null || !purchaseDate) return null;
+  return items.find((item) => item.id !== excludeId && item.amountMinor === amountMinor && item.purchaseDate === purchaseDate) ?? null;
+}
+
+/** Merchants saved before, most used first, matching what's typed (all of them when nothing is typed yet). */
+export function merchantSuggestions(items: SavedItem[], typed: string, limit = 4): string[] {
+  const counts = new Map<string, { name: string; count: number }>();
+  for (const item of items) {
+    const name = item.merchant?.trim();
+    if (!name) continue;
+    const entry = counts.get(name.toLocaleLowerCase()) ?? { name, count: 0 };
+    entry.count += 1;
+    counts.set(name.toLocaleLowerCase(), entry);
+  }
+  const query = typed.trim().toLocaleLowerCase();
+  return [...counts.entries()]
+    .filter(([key]) => key !== query && (!query || key.includes(query)))
+    .sort(([, a], [, b]) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, limit)
+    .map(([, entry]) => entry.name);
+}
+
 export interface ReceiptTotal {
   total: string;
   count: number;

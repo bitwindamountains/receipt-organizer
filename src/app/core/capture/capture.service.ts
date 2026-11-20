@@ -12,6 +12,7 @@ import { CategoryStore } from '../services/category.store';
 import { ImageStorageService, SelectedImage } from '../services/image-storage.service';
 import { ItemStore } from '../services/item.store';
 import { PreferencesStore } from '../services/preferences.store';
+import { findDuplicate, localDateKey } from '../utils/item-display';
 import { DeviceScreenshot, SnapSortCapture } from './capture-plugin';
 import { CapturedNotification, ParsedTransaction, parseTransaction, transactionKey } from './transaction-parser';
 
@@ -311,9 +312,10 @@ export class CaptureService {
     // "You received ₱500" screenshots are money in, not spending; "Sent to X" names the merchant.
     const asTransaction = parseTransaction({ id: candidate.id, packageName: '', title: '', text, postedAt: candidate.takenAt });
     if (asTransaction?.counterparty) suggestion = { ...suggestion, merchant: asTransaction.counterparty };
-    const flow: ItemFlow = asTransaction?.flow ?? 'expense';
+    // The receipt parser also spots money-in wording when browser OCR misreads ₱ and the notification parser can't read the amount.
+    const flow: ItemFlow = asTransaction?.flow ?? suggestion.flow;
     const day = suggestion.purchaseDate ?? localDateKey(new Date(candidate.takenAt));
-    const duplicate = this.store.items().find((item) => item.amountMinor === amountMinor && item.purchaseDate === day);
+    const duplicate = findDuplicate(this.store.items(), amountMinor, day);
     return { ...candidate, suggestion, flow, duplicateOf: duplicate?.id ?? null };
   }
 
@@ -465,10 +467,6 @@ export class CaptureService {
       URL.revokeObjectURL(sourceUrl);
     }
   }
-}
-
-function localDateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 function readSet(key: string): Set<string> {
