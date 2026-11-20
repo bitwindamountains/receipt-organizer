@@ -15,5 +15,10 @@ if (PWA) {
   }
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('ngsw-worker.js').catch((err) => console.error(err)));
+    // The worker serves the cached app first; reload once a newer deploy has downloaded so visitors don't stay a version behind.
+    // ponytail: reloads straight away (it arrives seconds after opening); switch to a "New version - Reload" prompt if it ever interrupts input.
+    navigator.serviceWorker.addEventListener('message', ({ data }) => {
+      if (data?.type === 'VERSION_READY' || data?.type === 'UNRECOVERABLE_STATE') location.reload();
+    });
   }
 }
