@@ -33,7 +33,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Share into SnapSort from the gallery, GCash, Maya, or any app. -->
+            <!-- Share into Starlog from the gallery, GCash, Maya, or any app. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
