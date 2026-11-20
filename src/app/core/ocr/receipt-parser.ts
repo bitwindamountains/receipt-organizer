@@ -26,12 +26,14 @@ const TOTAL_PATTERNS = [
 const NOT_TOTAL = /\b(sub-?\s*total|total\s*(items?|qty|quantity|discount|savings|vat)|vatable|vat\s*(amount|exempt|zero|12)|discount|change|tendered)\b/i;
 
 const CURRENCY_HINTS: [RegExp, string][] = [
-  [/₱|\bphp\b|\bpesos?\b/i, 'PHP'],
+  // GCash and Maya are Philippine-only wallets.
+  [/₱|\bphp\b|\bpesos?\b|\bgcash\b|\bmaya\b/i, 'PHP'],
   // Thermal printers that lack the ₱ glyph print "P485.00".
   [/\bP\s?\d[\d,]*\.\d{2}\b/, 'PHP'],
   [/€|\beur\b/i, 'EUR'],
-  [/£|\bgbp\b/i, 'GBP'],
-  [/¥|\bjpy\b|\byen\b/i, 'JPY'],
+  // Browser OCR misreads ₱ as £ (and logos as ¥), so a lone £ proves nothing and ¥ counts only before a number.
+  [/\bgbp\b/i, 'GBP'],
+  [/¥\s?\d|\bjpy\b|\byen\b/i, 'JPY'],
   [/\busd\b|us\$|\$/i, 'USD'],
 ];
 
@@ -40,7 +42,7 @@ const MONEY = /(?:₱|php|p|\$|usd|€|eur|£|¥)?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{
 
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
-const NOT_MERCHANT = /\b(official\s*receipt|sales\s*invoice|receipt|invoice|tin|vat\s*reg|min\b|sn\b|serial|tel|phone|mobile|www\.|\.com|street|st\.|ave|road|rd\.|brgy|barangay|city|province|cashier|date|time|table|order|welcome|thank)\b/i;
+const NOT_MERCHANT = /\b(official\s*receipt|sales\s*invoice|receipt|invoice|tin|vat\s*reg|min\b|sn\b|serial|tel|phone|mobile|www\.|\.com|street|st\.|ave|road|rd\.|brgy|barangay|city|province|cashier|date|time|table|order|welcome|thank|amount|total|express\s*send|send\s*money|sent\s*via|successful)\b/i;
 
 /** Keyword hints per default category, checked against the merchant and the full text. */
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
@@ -120,9 +122,11 @@ export function findCurrency(text: string): string | null {
 export function findMerchant(lines: string[]): string | null {
   for (const line of lines.slice(0, 6)) {
     const letters = line.replace(/[^a-z]/gi, '').length;
-    if (letters < 3 || letters < line.replace(/\s/g, '').length * 0.6) continue;
+    // Dots don't count against a name: e-wallets mask payees as "JI•••Y B.", which OCR reads as "Jl...Y B.".
+    if (letters < 3 || letters < line.replace(/[\s.]/g, '').length * 0.6) continue;
     if (NOT_MERCHANT.test(line) || /\d{3,}/.test(line)) continue;
-    return tidyName(line.replace(/[*#=_~|]+/g, ' ').trim());
+    // OCR turns back arrows, icons and borders into a leading "<", "]" or "|".
+    return tidyName(line.replace(/[*#=_~|]+/g, ' ').replace(/^[^\p{L}\p{N}]+/u, '').trim());
   }
   return null;
 }
