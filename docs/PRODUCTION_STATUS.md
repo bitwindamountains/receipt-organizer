@@ -128,7 +128,7 @@ Fixes in the same pass:
 - Upload key (`android/keystore.properties`) and a signed AAB; install and smoke-test on a physical Android 13+ device (rename, icons, demo load time, animations)
 - Name: keep Starlog with a descriptor. Play title "Starlog: Receipt Organizer" (web manifest `name` matches; launcher label and `short_name` stay "Starlog"). Another "StarLog" exists (an astronomy log app, `jvc.starlog`, last updated 2019) and US STARLOG marks are mostly dead and in unrelated classes; still search IPOPHL (Philippines) before launch.
 - Play Console: notification-listener and `READ_MEDIA_IMAGES` declarations (photo picker may be required), Data safety, content rating, store assets
-- Replace privacy-policy placeholders (contact details) and host the policy on a stable HTTPS URL
+- Privacy policy: `web/privacy-policy.html`, published with the web build at https://starlog-receipts.netlify.app/privacy-policy.html (needs Visitor access off to be public). Contact is GitHub Issues; Google Play would want an email instead.
 - Real GCash/Maya/bank notification wording for auto-capture
 - Add process-death/staging reconciliation for large imports (an interrupted batch can still leave orphaned files)
 - Complete category management (rename and merge)
