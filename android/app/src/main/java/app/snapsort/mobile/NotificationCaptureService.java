@@ -12,7 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Receives notifications once the user grants SnapSort "Notification access".
+ * Receives notifications once the user grants Starlog "Notification access".
  * Only notifications that look like a completed payment (a peso amount plus a
  * payment word) are kept; everything else is ignored and never stored. Chat
  * and SMS apps are skipped entirely so personal messages are never read into

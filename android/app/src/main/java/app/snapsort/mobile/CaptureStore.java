@@ -9,7 +9,7 @@ import org.json.JSONObject;
 
 /**
  * On-device queue of captured payment notifications, so payments that arrive
- * while SnapSort is closed are imported the next time it opens. Holds only
+ * while Starlog is closed are imported the next time it opens. Holds only
  * notifications that already passed the service's payment filter.
  */
 final class CaptureStore {

@@ -2,18 +2,19 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonButton, IonContent, IonIcon, ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { checkmarkCircle, lockClosedOutline, pricetagOutline, searchOutline } from 'ionicons/icons';
+import { lockClosedOutline, pricetagOutline, searchOutline, sparkles } from 'ionicons/icons';
 import { DemoService } from '../../core/demo/demo.service';
 import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-backdrop.component';
+import { StarMarkComponent } from '../../shared/star-mark.component';
 
 @Component({
   selector: 'app-onboarding',
-  imports: [IonContent, IonButton, IonIcon, AmbientBackdropComponent],
+  imports: [IonContent, IonButton, IonIcon, AmbientBackdropComponent, StarMarkComponent],
   template: `
     <ion-content [fullscreen]="true">
       <app-ambient-backdrop variant="full" />
       <main class="welcome page-width">
-        <!-- A screenshot and receipts are dealt onto a stack, scanned, then tagged. -->
+        <!-- A screenshot and receipts are dealt onto a stack, scanned, then tagged and logged as a star. -->
         <div class="sort-stage" aria-hidden="true">
           <div class="sort-stack">
             <div class="stack-card stack-card--shot">
@@ -29,12 +30,13 @@ import { AmbientBackdropComponent } from '../../shared/ambient-backdrop/ambient-
               <span class="scan-beam"></span>
             </div>
             <span class="stack-tag stack-tag--a"><ion-icon name="pricetag-outline" /> Food</span>
-            <span class="stack-tag stack-tag--b"><ion-icon name="checkmark-circle" /> Sorted</span>
+            <span class="stack-tag stack-tag--b"><ion-icon name="sparkles" /> Logged</span>
+            <span class="stage-comet"></span>
           </div>
         </div>
 
-        <p class="eyebrow reveal" style="--i: 3">SnapSort</p>
-        <h1 class="reveal" style="--i: 4">Find important images in seconds.</h1>
+        <p class="eyebrow brand-eyebrow reveal" style="--i: 3"><app-star-mark /> Starlog</p>
+        <h1 class="reveal" style="--i: 4">Log every receipt. Find it in seconds.</h1>
         <p class="lead reveal" style="--i: 5">Organize screenshots and receipts, find them instantly, and keep everything on your device.</p>
 
         <div class="trust-list">
@@ -62,7 +64,7 @@ export class OnboardingPage {
   private readonly toasts = inject(ToastController);
 
   constructor() {
-    addIcons({ checkmarkCircle, lockClosedOutline, pricetagOutline, searchOutline });
+    addIcons({ lockClosedOutline, pricetagOutline, searchOutline, sparkles });
   }
 
   explore(): void {

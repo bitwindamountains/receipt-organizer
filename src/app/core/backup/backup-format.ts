@@ -116,10 +116,10 @@ export async function readBackup(stream: ReadableStream<Uint8Array>, onEntry: (n
 }
 
 export function parseManifest(bytes: Uint8Array | undefined): BackupManifest {
-  if (!bytes) throw new BackupError('This file is not a SnapSort backup.');
+  if (!bytes) throw new BackupError('This file is not a Starlog backup.');
   const value = parseJson(bytes) as Partial<BackupManifest> | null;
-  if (value?.format !== BACKUP_FORMAT) throw new BackupError('This file is not a SnapSort backup.');
-  if (typeof value.version !== 'number' || value.version > BACKUP_VERSION) throw new BackupError('This backup was made by a newer SnapSort. Update the app, then try again.');
+  if (value?.format !== BACKUP_FORMAT) throw new BackupError('This file is not a Starlog backup.');
+  if (typeof value.version !== 'number' || value.version > BACKUP_VERSION) throw new BackupError('This backup was made by a newer version of Starlog. Update the app, then try again.');
   if (!value.checksums || typeof value.checksums !== 'object') throw new BackupError('The backup is damaged.');
   return value as BackupManifest;
 }

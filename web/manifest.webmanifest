@@ -1,6 +1,6 @@
 {
-  "name": "SnapSort",
-  "short_name": "SnapSort",
+  "name": "Starlog",
+  "short_name": "Starlog",
   "description": "A private, searchable library for screenshots and receipts.",
   "id": "/",
   "start_url": "/",

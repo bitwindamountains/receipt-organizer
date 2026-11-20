@@ -56,8 +56,8 @@ describe('backup format', () => {
 
   it('rejects other files, newer versions, and malformed records', () => {
     const json = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
-    expect(() => parseManifest(undefined)).toThrow('not a SnapSort backup');
-    expect(() => parseManifest(json({ format: 'snapsort-backup', version: 99, checksums: {} }))).toThrow('newer SnapSort');
+    expect(() => parseManifest(undefined)).toThrow('not a Starlog backup');
+    expect(() => parseManifest(json({ format: 'snapsort-backup', version: 99, checksums: {} }))).toThrow('newer version of Starlog');
     expect(() => parseItems(json([{ ...item, imageKey: '../x.jpg' }]))).toThrow('record 1');
     expect(() => parseItems(json([{ ...item, amountMinor: -5 }]))).toThrow('record 1');
     expect(() => parseItems(json([item, item]))).toThrow('record 2');

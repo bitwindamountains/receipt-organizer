@@ -211,7 +211,7 @@ export class ItemDetailsPage implements OnInit {
   async confirmDelete(item: SavedItem): Promise<void> {
     const alert = await this.alertController.create({
       header: 'Delete this item?',
-      message: 'The SnapSort copy and its details will be removed. Your original gallery image will stay where it is.',
+      message: 'The Starlog copy and its details will be removed. Your original gallery image will stay where it is.',
       buttons: [
         { text: 'Cancel', role: 'cancel' },
         { text: 'Delete', role: 'destructive', handler: () => void this.deleteWithUndo(item) },

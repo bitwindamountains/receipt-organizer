@@ -44,7 +44,7 @@ ion-popover { --border-radius: var(--sn-radius-md); --box-shadow: var(--sn-shado
 .content-pad { padding: 18px 18px calc(108px + var(--ion-safe-area-bottom)); }
 .eyebrow {
   color: var(--ion-color-primary);
-  font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin: 0;
+  font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin: 0;
 }
 .item-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; }
 

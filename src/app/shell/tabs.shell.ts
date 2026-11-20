@@ -22,6 +22,7 @@ const TABS = ['home', 'library', 'insights', 'settings'];
   imports: [IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonFab, IonFabButton, RouterLink],
   template: `
     <ion-tabs (ionTabsDidChange)="tab.set($event.tab)">
+      <span class="dock-scrim" aria-hidden="true"></span>
       <ion-tab-bar slot="bottom" class="dock">
         <!-- One pill slides under the selected tab instead of each tab filling itself. -->
         <span class="dock-pill" aria-hidden="true" [class.is-hidden]="tabIndex() < 0" [style.--tab]="tabIndex()"></span>

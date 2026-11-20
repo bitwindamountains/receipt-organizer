@@ -1,6 +1,6 @@
-# SnapSort
+# Starlog
 
-SnapSort is an offline-first Android organizer for screenshots and receipt images. The current codebase is the Phase 1 production vertical slice.
+Starlog is an offline-first Android organizer for screenshots and receipt images. The current codebase is the Phase 1 production vertical slice.
 
 ## Local development
 
@@ -43,9 +43,9 @@ The exact production dependency set is pinned by `package-lock.json`. Test image
 
 All on the device; turn it on in Settings > Auto-capture.
 
-- **Payment notifications (Android):** a `NotificationListenerService` keeps only notifications with a peso amount and a payment word, skipping chat and SMS apps. They are queued in app storage until SnapSort opens, then parsed (`core/capture/transaction-parser.ts`) into receipts with a drawn receipt image. Duplicates are skipped by reference number. "Try it with a sample" runs the same pipeline on any platform.
+- **Payment notifications (Android):** a `NotificationListenerService` keeps only notifications with a peso amount and a payment word, skipping chat and SMS apps. They are queued in app storage until Starlog opens, then parsed (`core/capture/transaction-parser.ts`) into receipts with a drawn receipt image. Duplicates are skipped by reference number. "Try it with a sample" runs the same pipeline on any platform.
 - **Screenshot inbox:** on Android, new screenshots are read from the gallery with `READ_MEDIA_IMAGES`. In Chrome or Edge on a computer, the user picks a screenshots folder. Payment screenshots are read and offered in `/inbox`.
-- **Share into SnapSort (Android):** share one or more images from any app and they open on the Add page. In the browser, paste (Ctrl/⌘+V) or drop images on the Add page.
+- **Share into Starlog (Android):** share one or more images from any app and they open on the Add page. In the browser, paste (Ctrl/⌘+V) or drop images on the Add page.
 
 Native code lives in `android/app/src/main/java/app/snapsort/mobile/` (`SnapSortCapturePlugin`, `NotificationCaptureService`, `CaptureStore`). To build without Android Studio, use JDK 21 with `ANDROID_HOME` set and run `cd android && ./gradlew assembleDebug`.
 

@@ -1,6 +1,25 @@
 # Production Status
 
-Updated: November 20, 2026 - installable web version (PWA), demo mode, version 0.3.0
+Updated: November 20, 2026 - renamed to Starlog, UI review fixes, installable web version (PWA), Netlify site, demo mode, version 0.3.0
+
+## Where things stand (end of November 20, 2026)
+
+- **`main`** has everything through PR #6: demo mode (#4), PWA web build (#5), Starlog rename, green star look and UI review fixes (#6). `npm run check`: 65 tests pass, initial bundle 547 kB.
+- **Android:** the last release APK (0.3.0, `versionCode 3`) was built before the rename, so it still says SnapSort and has the old icon. Rebuild before testing. It is unsigned (no `android/keystore.properties`). JDK is now 21.0.13 (path in CLAUDE.md).
+- **Web (Netlify):** site `snapsort-receipts` at https://snapsort-receipts.netlify.app holds a pre-rename build, uploaded by hand (`netlify deploy --prod --no-build --dir dist/snapsort/browser`), not linked to GitHub. Visitors get a Netlify login page because the team's Visitor access setting requires a login; turn it off under Project configuration > Access & security > Visitor access. `netlify.toml` (build command, Node 24.15.0, SPA rewrite) is on the unmerged `netlify` branch.
+- **CI:** GitHub Actions has never run on this repo, so PRs #4-#6 were merged on local checks only. Check Settings > Actions (likely an account or billing setting).
+- **Next:** merge `netlify`, rebuild and redeploy the web version; build a debug APK and check the new icon, splash and name on a phone; check "Starlog" on the Play Store and for trademarks; then the release blockers below.
+- **Ideas not built:** a comet from Save to the Library tab, constellation-style monthly chart, star-themed empty Library, renaming Favorites to "Starred".
+- **Tools:** `scripts/draw-icons.py` regenerates every app icon and splash from the logo geometry (edit its colour stops to restyle). `scripts/ui-audit.mjs` screenshots each screen at 375 px (light, dark, landscape) with headless Chrome and reports small tap targets, text under 12 px and horizontal overflow.
+
+## Renamed to Starlog (November 20, 2026)
+
+- Every visible name is now Starlog: Android app label, page title, web manifest, screens, receipt footer ("Made with Starlog"), backup file name (`starlog-backup-YYYY-MM-DD.zip`), privacy policy.
+- Internal IDs keep `snapsort` on purpose: package `app.snapsort.mobile` (Play treats a new ID as a new app), storage keys and SQLite name (existing data), backup format `snapsort-backup` (old backups still restore), the `SnapSortCapture` plugin.
+- New look: star-and-comet logo (`shared/star-mark.component.ts`), jade/mint `--sn-star` tokens (a lighter step of the brand green), deep-green night-sky app icons (web, Android launcher, adaptive icon, splash), twinkling stars and a passing comet in the ambient backdrop, a comet off the onboarding stack, star-shaped favorite sparkles, a glinting logo. All motion is behind reduced-motion.
+- Icons are drawn by `scripts/draw-icons.py` from the logo geometry; the old placeholder icon is gone.
+- UI review fixes (same day): cards, Library sort and month groups use the receipt's purchase date (`itemDateKey`/`itemDate` in `item-display.ts`, falling back to the save date); a near-opaque dock with a fade above it; 48 px touch targets (category chips, custom-category chips; 44 px segment and Table toggle); no text under 12 px; stars kept to the edges away from headings; short wide receipts shown whole instead of side-cropped; a slim label-less dock in landscape; equal-width tabs so the selected pill is centred.
+- Checked with headless Chrome at 375 px, light, dark and landscape. Not yet checked on a device. Check the Play Store and trademarks for the name before release.
 
 ## Installable web version (November 20, 2026)
 
@@ -9,7 +28,6 @@ Updated: November 20, 2026 - installable web version (PWA), demo mode, version 0
 - Verified in Chromium: the worker activates and controls the page, and after stopping the server the app reloaded and loaded demo receipts offline.
 - Hosting: needs HTTPS and a rewrite of unknown paths to `/index.html`, so a first visit to a deep link such as `/library` works before the worker is installed.
 - Web limits: no notification auto-capture, screenshot inbox only in Chromium (folder picker), data lives in browser storage (localStorage for item details, about 5 MB), and clearing site data erases it.
-- The icon is still Capacitor's default placeholder, the same one the Android launcher uses.
 
 ## Demo mode (November 20, 2026)
 
@@ -37,7 +55,7 @@ Updated: November 20, 2026 - installable web version (PWA), demo mode, version 0
 
 - **Payment notifications (Android):** opt-in notification capture turns GCash, Maya, and bank payment notifications into receipts automatically. Each receipt gets a drawn receipt image, is tagged `auto-captured` and with the provider, and is de-duplicated by reference number (or amount and minute). Received money is recorded as income.
 - **Screenshot inbox:** finds new payment screenshots (Android gallery, or a chosen folder in Chromium browsers), reads them, and offers them on `/inbox` with Add, Skip, and Add all. Screenshots that match an existing receipt by amount and date are flagged and left out of Add all.
-- **Share into SnapSort:** an Android share target (`SEND`/`SEND_MULTIPLE` `image/*`) copies shared images into the cache and opens them on the Add page with auto-fill. Browser equivalent: paste or drop on the Add page.
+- **Share into Starlog:** an Android share target (`SEND`/`SEND_MULTIPLE` `image/*`) copies shared images into the cache and opens them on the Add page with auto-fill. Browser equivalent: paste or drop on the Add page.
 - **Home:** an "Auto-captured" card and an inbox teaser. Insights renames income to "Money in" (sales plus transfers received).
 - **Native:** `SnapSortCapturePlugin`, `NotificationCaptureService`, and `CaptureStore` (Java). `assembleDebug` succeeds with JDK 21 and SDK 36.
 - **Release blockers for this feature:**
@@ -107,16 +125,20 @@ Fixes in the same pass:
 
 ## Release blockers
 
-- Implement and test versioned export/restore before any public rollout
-- Add process-death/staging reconciliation for large imports (thumbnails and multi-image import are done; an interrupted batch can still leave orphaned files)
+- Upload key (`android/keystore.properties`) and a signed AAB; install and smoke-test on a physical Android 13+ device (rename, icons, demo load time, animations)
+- Name check: Play Store and trademark search for "Starlog" before the listing
+- Play Console: notification-listener and `READ_MEDIA_IMAGES` declarations (photo picker may be required), Data safety, content rating, store assets
+- Replace privacy-policy placeholders (contact details) and host the policy on a stable HTTPS URL
+- Real GCash/Maya/bank notification wording for auto-capture
+- Add process-death/staging reconciliation for large imports (an interrupted batch can still leave orphaned files)
 - Complete category management (rename and merge)
-- Measure thumbnail generation time for large photos on a low-end Android device
-- Replace privacy-policy placeholders and host the policy on a stable HTTPS URL
-- Install Android Studio/JDK/SDK locally; build and smoke-test a signed AAB on physical devices
-- Run accessibility, low-storage, process-recreation, and upgrade migration tests
-- Create store assets and complete Play Console declarations
+- Measure thumbnail generation and demo load time on a low-end Android device
+- Run accessibility (TalkBack, largest font), low-storage, process-recreation, and upgrade migration tests
+- Done since this list was written: versioned export/restore, local JDK/SDK builds, a real app icon
 
 ## Verification recorded
+
+- `npm run check`: typecheck, 65 tests, production build pass (November 20, 2026, after PR #6)
 
 - `npm run typecheck`: pass
 - `npm test -- --watch=false`: 40 tests pass (October 2, 2026)

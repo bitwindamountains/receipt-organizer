@@ -172,7 +172,7 @@ function paint(draft: ReceiptDraft, ctx: CanvasRenderingContext2D, height?: numb
     }
     y += 6;
   }
-  text('Made with SnapSort', WIDTH / 2, y + 6, `500 10px ${SANS}`, RULE, 'center');
+  text('Made with Starlog', WIDTH / 2, y + 6, `500 10px ${SANS}`, RULE, 'center');
   y += 26 + TOOTH + 10;
   return Math.ceil(y);
 }

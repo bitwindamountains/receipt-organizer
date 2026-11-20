@@ -46,6 +46,8 @@ app-item-card { display: block; min-width: 0; }
   transition: opacity 420ms ease, transform 700ms var(--sn-ease-out);
 }
 .thumb.is-loaded img { opacity: 1; transform: scale(1); }
+.thumb.is-wide { background: var(--sn-paper); }
+.thumb.is-wide img { object-fit: contain; }
 .thumb.is-loaded::before { opacity: 1; }
 .thumb-skeleton, .skeleton {
   background: linear-gradient(100deg, transparent 30%, var(--sn-shimmer) 50%, transparent 70%) var(--sn-surface-soft);
@@ -67,7 +69,7 @@ app-item-card { display: block; min-width: 0; }
   background: rgba(10, 16, 14, .55);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  font-size: .7rem;
+  font-size: .75rem;
   font-weight: 700;
 }
 .type-badge ion-icon { font-size: 14px; }
@@ -181,7 +183,7 @@ ion-searchbar.sn-search.searchbar-has-focus { --box-shadow: 0 0 0 3px rgba(var(-
   -webkit-mask: $zigzag 50% / 14px 100%;
   mask: $zigzag 50% / 14px 100%;
 }
-.slip-label { grid-column: 1 / -1; margin: 0; color: var(--ion-color-medium); font-family: var(--sn-font-mono); font-size: .7rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.slip-label { grid-column: 1 / -1; margin: 0; color: var(--ion-color-medium); font-family: var(--sn-font-mono); font-size: .75rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
 .slip-total { font-size: 1.8rem; font-weight: 780; line-height: 1.1; letter-spacing: -.03em; }
 .slip-meta { color: var(--ion-color-medium); font-family: var(--sn-font-mono); font-size: .76rem; text-align: right; }
 a.month-slip { text-decoration: none; }
@@ -210,8 +212,8 @@ a.month-slip { text-decoration: none; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 42px;
-  padding: 0 7px 0 14px;
+  min-height: 48px;
+  padding: 0 9px 0 16px;
   border: 1px solid var(--sn-border);
   border-radius: 999px;
   background: var(--sn-card);
@@ -224,13 +226,14 @@ a.month-slip { text-decoration: none; }
   cursor: pointer;
   transition: border-color var(--sn-dur), background-color var(--sn-dur), transform var(--sn-dur-fast) var(--sn-ease-out);
 }
-.cat-chip .count { display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 999px; background: var(--sn-primary-soft); color: var(--sn-primary-ink); font-size: .74rem; font-weight: 760; }
+.cat-chip .count { display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 999px; background: var(--sn-primary-soft); color: var(--sn-primary-ink); font-size: .75rem; font-weight: 760; }
 @media (hover: hover) { .cat-chip:hover { border-color: var(--ion-color-primary); } }
 @media (prefers-reduced-motion: no-preference) { .cat-chip:active { transform: scale(.95); } }
 
 // ---------- Section heading ----------
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin: 34px 0 16px; }
 .section-heading h2 { margin: 3px 0 0; }
+.section-heading ion-button { height: 48px; margin: 0; }
 
 // ---------- Empty state ----------
 .empty-state {
@@ -261,15 +264,15 @@ ion-segment.pill { --background: var(--sn-surface-soft); padding: 4px; border-ra
 ion-segment.pill ion-segment-button {
   --indicator-color: var(--sn-surface);
   // Percent heights don't resolve inside the shadow DOM, so match the button height.
-  --indicator-height: 40px;
+  --indicator-height: 44px;
   --indicator-box-shadow: var(--sn-shadow-1);
   --border-radius: 11px;
   --color: var(--ion-color-medium);
   --color-checked: var(--ion-text-color);
   --padding-start: 6px;
   --padding-end: 6px;
-  height: 40px;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   font-size: .86rem;
   font-weight: 700;
   letter-spacing: 0;
