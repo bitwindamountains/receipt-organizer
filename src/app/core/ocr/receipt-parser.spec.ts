@@ -1,5 +1,5 @@
 import { SavedItem } from '../models/saved-item';
-import { findDate, findMerchant, findTotal, parseReceiptText, suggestCategory } from './receipt-parser';
+import { findCurrency, findDate, findMerchant, findTotal, parseReceiptText, suggestCategory } from './receipt-parser';
 
 const today = new Date(2026, 9, 1);
 
@@ -62,6 +62,41 @@ describe('receipt parser', () => {
     expect(result.amount).toBe(1250);
     expect(result.currencyCode).toBe('PHP');
     expect(result.purchaseDate).toBe('2026-10-01');
+  });
+
+  // Real browser-OCR output: Tesseract reads ₱ as "£" or "#" and the Claude logo as "¥".
+  it('reads a GCash Express Send screenshot as read by browser OCR', () => {
+    const ocr = `7:30 EH FARTS CO411%
+xX Express Send
+Jl...Y B.
+163 Deeeee6992
+Sent via GCash
+Amount 150.00
+Total Amount Sent £150.00
+Ref No. 4040 634 553012
+May 09, 2026 7:30 PM
+wv 2799 (gcoze)
+By going digital, you reduce your carbon footprint`;
+    const result = parseReceiptText(ocr, { today: new Date(2026, 10, 20), fileName: 'd0315e66.jfif' });
+    expect(result).toMatchObject({ type: 'receipt', merchant: 'Jl...Y B.', amount: 150, currencyCode: 'PHP', purchaseDate: '2026-05-09' });
+  });
+
+  it('does not take a misread peso sign or logo for pounds or yen', () => {
+    const ocr = `< Budget & history
+Total you've spent in November
+Set budget
+October
+Claude Pro Subsc... #1,300.00
+¥* Oct 29, 2026
+Google Home £0.00
+Oct 14, 2026
+Claude Pro Subsc... #1,300.00
+¥* Oct 1,2026`;
+    const result = parseReceiptText(ocr, { today: new Date(2026, 10, 20) });
+    expect(result).toMatchObject({ type: 'receipt', amount: 1300, currencyCode: null, purchaseDate: '2026-10-29' });
+    expect(result.merchant).not.toMatch(/^</);
+    expect(findCurrency('Total £12.50 GBP')).toBe('GBP');
+    expect(findCurrency('Total ¥1,200')).toBe('JPY');
   });
 
   it('treats a chat as a screenshot and suggests Conversations', () => {

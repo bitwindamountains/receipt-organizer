@@ -27,7 +27,7 @@ export class TextRecognitionService {
     }
     const worker = await this.worker();
     try {
-      return (await worker.recognize(image.sourceUrl)).data.text;
+      return (await worker.recognize(await grayscale(image.sourceUrl))).data.text;
     } finally {
       this.scheduleShutdown();
     }
@@ -36,7 +36,9 @@ export class TextRecognitionService {
   private worker(): Promise<Worker> {
     clearTimeout(this.idleTimer);
     this.webWorker ??= (async () => {
-      const { createWorker, OEM } = await import('tesseract.js');
+      const tesseract = await import('tesseract.js');
+      // tesseract.js is CommonJS: the production build exposes it only as `default` (the dev server hides this).
+      const { createWorker, OEM } = tesseract.default ?? tesseract;
       // The worker runs from a blob URL, so asset paths must be absolute.
       const base = new URL('ocr/', document.baseURI).href;
       return createWorker('eng', OEM.LSTM_ONLY, { workerPath: `${base}worker.min.js`, corePath: base, langPath: base.replace(/\/$/, '') });
@@ -56,4 +58,15 @@ export class TextRecognitionService {
       void worker?.then((instance) => instance.terminate()).catch(() => undefined);
     }, IDLE_SHUTDOWN_MS);
   }
+}
+
+/** Tesseract misses pale text on coloured screens (GCash's labels, "Sent via GCash"); reading a grayscale copy recovers it. */
+async function grayscale(url: string): Promise<HTMLCanvasElement> {
+  const bitmap = await createImageBitmap(await (await fetch(url)).blob());
+  const canvas = Object.assign(document.createElement('canvas'), { width: bitmap.width, height: bitmap.height });
+  const context = canvas.getContext('2d')!;
+  context.filter = 'grayscale(1)';
+  context.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  return canvas;
 }
