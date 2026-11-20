@@ -5,7 +5,7 @@ Updated: November 20, 2026 - renamed to Starlog, UI review fixes, installable we
 ## Where things stand (end of November 20, 2026)
 
 - **`main`** has everything through PR #6: demo mode (#4), PWA web build (#5), Starlog rename, green star look and UI review fixes (#6). `npm run check`: 65 tests pass, initial bundle 547 kB.
-- **Android:** the last release APK (0.3.0, `versionCode 3`) was built before the rename, so it still says SnapSort and has the old icon. Rebuild before testing. It is unsigned (no `android/keystore.properties`). JDK is now 21.0.13 (path in CLAUDE.md).
+- **Android:** debug and unsigned release APKs (0.3.0, `versionCode 3`) rebuilt from `main` after the rename; not yet tested on a phone. Release stays unsigned until `android/keystore.properties` exists. JDK is now 21.0.13 (path in CLAUDE.md).
 - **Web (Netlify):** site `snapsort-receipts` at https://snapsort-receipts.netlify.app holds a pre-rename build, uploaded by hand (`netlify deploy --prod --no-build --dir dist/snapsort/browser`), not linked to GitHub. Visitors get a Netlify login page because the team's Visitor access setting requires a login; turn it off under Project configuration > Access & security > Visitor access. `netlify.toml` (build command, Node 24.15.0, SPA rewrite) is on the unmerged `netlify` branch.
 - **CI:** GitHub Actions has never run on this repo, so PRs #4-#6 were merged on local checks only. Check Settings > Actions (likely an account or billing setting).
 - **Next:** merge `netlify`, rebuild and redeploy the web version; build a debug APK and check the new icon, splash and name on a phone; check "Starlog" on the Play Store and for trademarks; then the release blockers below.
