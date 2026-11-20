@@ -2,7 +2,7 @@ import { NewSavedItem } from '../../core/models/saved-item';
 import { ReceiptSuggestion } from '../../core/ocr/receipt-parser';
 
 type Details = Omit<NewSavedItem, 'imageKey' | 'mimeType'>;
-export type TypedField = 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate';
+export type TypedField = 'merchant' | 'amount' | 'currencyCode' | 'purchaseDate' | 'flow';
 
 /**
  * Details for one image of a batch. The form's merchant, amount, and date may have been
@@ -19,5 +19,6 @@ export function detailsForImage(shared: Details, own: ReceiptSuggestion | null, 
     amountMinor,
     currencyCode: amountMinor === null ? null : typed.has('currencyCode') || typed.has('amount') ? currency : (reading?.currencyCode ?? currency),
     purchaseDate: typed.has('purchaseDate') ? shared.purchaseDate : (reading?.purchaseDate ?? null),
+    flow: typed.has('flow') ? shared.flow : (reading?.flow ?? 'expense'),
   };
 }

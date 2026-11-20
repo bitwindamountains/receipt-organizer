@@ -38,7 +38,10 @@ function formatMinor(amountMinor: number, currencyCode: string): string {
 export function matchesQuery(item: SavedItem, rawQuery: string): boolean {
   const terms = rawQuery.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   if (!terms.length) return true;
-  const haystack = [item.title, item.notes, item.merchant, item.category, item.type, ...item.tags]
+  const amount = item.amountMinor === null ? null : item.amountMinor / 100;
+  // Amounts match as typed: "1300", "1300.00" or "1,300.00".
+  const amounts = amount === null ? [] : [String(amount), amount.toFixed(2), amount.toLocaleString('en-US', { minimumFractionDigits: 2 })];
+  const haystack = [item.title, item.notes, item.merchant, item.category, item.type, ...item.tags, ...amounts]
     .filter((value): value is string => Boolean(value))
     .join('\n')
     .toLocaleLowerCase();
