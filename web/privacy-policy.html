@@ -8,7 +8,7 @@
 <body>
   <main>
     <h1>Starlog Privacy Policy</h1>
-    <p>Effective date: October 17, 2026</p>
+    <p>Effective date: November 21, 2026</p>
     <p>Starlog is an offline-first organizer for screenshots and receipts. Starlog does not create user accounts, display advertising, or upload your imported images and item details to Starlog servers.</p>
     <h2>Data the app handles</h2>
     <p>The app processes images you explicitly choose, along with titles, notes, categories, tags, merchant names, amounts, currencies, and purchase dates you enter. This information is stored in the app's private storage on your device.</p>
@@ -18,16 +18,21 @@
     <p>If you turn on payment capture and grant Android's Notification access, Starlog reads notifications from payment and banking apps such as GCash, Maya, and banks. It keeps only notifications that look like payments, and skips messaging apps and one-time codes. It stores the amount, counterparty, reference number, and the notification text in the app's private storage to create receipts. Nothing leaves your device. You can turn capture off in Settings or revoke Notification access in Android settings at any time; turning capture off discards notifications that were not yet filed.</p>
     <h2>Screenshot inbox and shared images (optional)</h2>
     <p>If you use the screenshot inbox and grant photo access, Starlog looks at your recent screenshots on the device to find payment confirmations and offers them for you to add. Images you share into Starlog from other apps are copied into app storage. Screenshots are read on the device only and are not uploaded.</p>
+    <h2>Backups</h2>
+    <p>Export backup creates a ZIP file with your images and item details and hands it to the place you choose, such as your Files app or a cloud drive. Starlog never uploads it on its own. Whoever can open that file can see its contents, so keep it somewhere private. Restore reads a backup file you pick and adds its items to the app.</p>
+    <h2>Web version</h2>
+    <p>The web version at starlog-receipts.netlify.app works the same way: item details are kept in your browser's local storage and images in its IndexedDB, on your device only. Clearing the site's data in your browser erases them. The site is hosted by Netlify, which, like any web host, receives standard request information such as your IP address when you load the page. Starlog adds no analytics or tracking to it.</p>
     <h2>Sharing</h2>
     <p>Starlog does not sell or share your library with third parties. When you choose Share, Android sends the selected image to the app or service you select. That destination's privacy practices then apply.</p>
     <h2>Retention and deletion</h2>
-    <p>Items remain on the device until you delete them, erase app data, or uninstall the app. Deleting a Starlog item removes the app-managed copy after the undo period and does not delete the source image from your gallery.</p>
+    <p>Items remain on the device until you delete them, use Settings &gt; Erase everything, clear the app's data, or uninstall the app. Deleting a Starlog item removes the app-managed copy after the undo period and does not delete the source image from your gallery.</p>
     <h2>Diagnostics</h2>
-    <p>Starlog does not include a third-party analytics or crash-reporting SDK. Google Play may provide aggregated stability information under Google's own terms when the app is distributed through Google Play.</p>
+    <p>Starlog does not include a third-party analytics or crash-reporting SDK. The app is distributed as an APK file on GitHub. If it is later distributed through Google Play, Google may provide aggregated stability information under Google's own terms.</p>
     <h2>Security</h2>
-    <p>Imported images are stored in Android app-private storage. No system can be guaranteed completely secure, so users should maintain an exported backup when that feature becomes available.</p>
+    <p>Imported images are stored in Android app-private storage. Android's own cloud backup and device transfer are turned off for Starlog, so your data is not copied off the device without you. No system can be guaranteed completely secure, so keep an exported backup of anything important.</p>
     <h2>Changes and contact</h2>
-    <p>This policy must be updated before the app's data practices change. Before public release, replace this paragraph with the developer's legal name and a monitored privacy support email, and publish this page at a stable public HTTPS address.</p>
+    <p>Starlog is developed by bitwindamountains. If the way Starlog handles data changes, this page will be updated and the effective date above will change.</p>
+    <p>For privacy questions or requests, open an issue at <a href="https://github.com/bitwindamountains/receipt-organizer/issues">github.com/bitwindamountains/receipt-organizer/issues</a>. Issues are public, so please do not post receipts, screenshots, or other personal details there.</p>
   </main>
 </body>
 </html>
