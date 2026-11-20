@@ -1,16 +1,31 @@
 # Production Status
 
-Updated: November 20, 2026 - renamed to Starlog, UI review fixes, installable web version (PWA), Netlify site, demo mode, version 0.3.0
+Updated: November 21, 2026 - version 0.4.5 shipped (signed APK on GitHub Releases, web on Netlify); UX critique fixes and dark mode pass
 
-## Where things stand (end of November 20, 2026)
+## Where things stand (end of November 21, 2026) - start here next session
 
-- **`main`** has everything through PR #6: demo mode (#4), PWA web build (#5), Starlog rename, green star look and UI review fixes (#6). `npm run check`: 65 tests pass, initial bundle 547 kB.
-- **Android:** 0.4.5 (`versionCode 9`) is signed with the upload key (`android/starlog-upload.jks`, alias `upload`, outside git; back it up). `bundleRelease` gives a signed AAB for Play; `assembleRelease` a signed APK. Not yet tested on a phone. JDK is now 21.0.13 (path in CLAUDE.md).
-- **Web (Netlify):** site `starlog-receipts` at https://starlog-receipts.netlify.app (renamed from `snapsort-receipts`; the old address is gone) holds the current Starlog build, uploaded by hand (`netlify deploy --prod --no-build --dir dist/snapsort/browser`), not linked to GitHub. `netlify.toml` (build command, Node 24.15.0, SPA rewrite) is on `main`. The web app reloads itself when a newer deploy is ready. Public (no Netlify login) since November 21, 2026.
-- **CI:** GitHub Actions has never run on this repo, so PRs #4-#6 were merged on local checks only. Check Settings > Actions (likely an account or billing setting).
-- **Next:** merge `netlify`, rebuild and redeploy the web version; build a debug APK and check the new icon, splash and name on a phone; check "Starlog" on the Play Store and for trademarks; then the release blockers below.
+- **`main`** has everything through PR #22. Working tree clean apart from the untracked `.impeccable/` folder (detector ignore values and the critique report; fine to leave untracked).
+- **Version 0.4.5** (`versionCode 9`) everywhere: `android/app/build.gradle`, `package.json`, `APP_VERSION`. Bump all three for the next release.
+- **Android:** signed with the upload key (`android/starlog-upload.jks`, alias `upload`; password in gitignored `android/keystore.properties`; back both up off this PC). `assembleRelease` gives the signed APK, `bundleRelease` the AAB. Check the APK with `apksigner verify` (build-tools 36.0.0), not `jarsigner`. Certificate SHA-256 starts `9557`, ends `fb77`.
+- **Distribution (free, no Play account):** signed APK attached to GitHub Releases (`gh release create vX.Y.Z ... Starlog-X.Y.Z.apk`); v0.4.0-v0.4.5 exist, v0.4.5 is Latest. Link to share: https://github.com/bitwindamountains/receipt-organizer/releases/latest
+- **Web:** https://starlog-receipts.netlify.app is public and on 0.4.5. Deploy: `npm run build:web` then `npx -y netlify-cli deploy --prod --no-build --dir dist/snapsort/browser`. `npm run check` overwrites `dist/` with the Android build, so always run `build:web` right before deploying. The app reloads itself when a new deploy is ready.
+- **Design review:** `/impeccable critique` scored 26/40 (report in `.impeccable/critique/`); all of its findings were fixed in 0.4.4 and dark mode in 0.4.5. Re-running it would measure progress.
+- **CI:** GitHub Actions has never run on this repo; merges rely on local `npm run check`.
+- **Never tested on a real phone** (most important gap): share a screenshot into Starlog, Android back on a half-filled form (should ask before discarding), real GCash/Maya notification capture, screenshot inbox, native share sheet, warranty reminder, dark mode on device.
+- **Next:**
+  1. The user installs 0.4.5 from the Releases link and reports problems with screenshots; fix those first.
+  2. User-side housekeeping: turn off Netlify's "Powered by Netlify" badge (Project configuration > General; it covers the tabs on phones), back up the keystore and password, IPOPHL trademark search for "Starlog".
+  3. Optional: re-run `/impeccable critique`; remaining blockers below (category rename/merge, large-import recovery, TalkBack/large-font tests).
 - **Ideas not built:** a comet from Save to the Library tab, constellation-style monthly chart, star-themed empty Library, renaming Favorites to "Starred".
-- **Tools:** `scripts/draw-icons.py` regenerates every app icon and splash from the logo geometry (edit its colour stops to restyle). `scripts/ui-audit.mjs` screenshots each screen at 375 px (light, dark, landscape) with headless Chrome and reports small tap targets, text under 12 px and horizontal overflow.
+- **Tools:** `scripts/draw-icons.py` regenerates every app icon and splash from the logo geometry. `scripts/ui-audit.mjs` screenshots each screen at 375 px (light, dark, landscape) with headless Chrome and reports small tap targets, text under 12 px and horizontal overflow.
+
+## Versions 0.4.0-0.4.5 (November 20-21, 2026)
+
+- **0.4.0:** store name "Starlog: Receipt Organizer"; browser receipt reading fixed (Tesseract is CommonJS: `tesseract.default ?? tesseract`); better reading of GCash and Google Play screenshots (money in, wallet tags, PHP for GCash/Maya, masked names); privacy policy moved to `web/privacy-policy.html` (contact: GitHub Issues).
+- **0.4.1-0.4.2:** totals visibly update after saving: Insights opens on the month of the newest receipt, Home shows an all-time line, the save toast has "See <month>" (`/insights?month=`). Add page now loads the store (suggestions and duplicate check were empty when Add was the first screen).
+- **0.4.3:** Add flow: form appears after an image is picked, sticky save bar with "Save & add next", duplicate warning with "Discard this one", merchant suggestions, money in/out select, Transfers category (not counted as spending; `countsAsSpending()`), "Needs details" tile opening `/library?review=true`, Library month filter and more sorts, search matches amounts.
+- **0.4.4:** critique fixes: discard guard on Add/Edit/receipt maker (`confirmDiscard`), 10 s undo on delete, Erase alert offers "Export backup first", sentence-case dialog buttons, 48 px back/toolbar buttons, Insights rows link to Library, medium text contrast `#5b6965`.
+- **0.4.5:** dark mode: raised `#22302c` alerts, popovers and toasts with borders, readable error red `#ff6b74` (`--sn-danger-ink`), readable select-dialog labels, helper text via `helperText` (`ion-note slot="helper"` rendered 0x0).
 
 ## Renamed to Starlog (November 20, 2026)
 
@@ -125,7 +140,7 @@ Fixes in the same pass:
 
 ## Release blockers
 
-- Upload key (`android/keystore.properties`) and a signed AAB; install and smoke-test on a physical Android 13+ device (rename, icons, demo load time, animations)
+- Done: upload key and signed builds (0.4.0+). Still open: install and smoke-test on a physical Android 13+ device (rename, icons, demo load time, animations)
 - Name: keep Starlog with a descriptor. Play title "Starlog: Receipt Organizer" (web manifest `name` matches; launcher label and `short_name` stay "Starlog"). Another "StarLog" exists (an astronomy log app, `jvc.starlog`, last updated 2019) and US STARLOG marks are mostly dead and in unrelated classes; still search IPOPHL (Philippines) before launch.
 - Play Console: notification-listener and `READ_MEDIA_IMAGES` declarations (photo picker may be required), Data safety, content rating, store assets
 - Privacy policy: `web/privacy-policy.html`, published with the web build at https://starlog-receipts.netlify.app/privacy-policy.html. Contact is GitHub Issues; Google Play would want an email instead.
@@ -148,6 +163,6 @@ Fixes in the same pass:
 - Capacitor Android platform sync: pass; API 36 / minimum API 24
 - `npm audit --omit=dev`: zero production dependency vulnerabilities
 - Browser HTTP smoke check: localhost returned 200; visual automation unavailable in this session
-- Signed Android build: not yet attempted; debug builds work with a portable JDK 21
+- Signed Android build: 0.4.5 APK verified with `apksigner` (November 21, 2026)
 
 The development-only dependency tree currently reports three moderate findings through Capacitor CLI's `xcode`/`uuid` chain. Do not force-downgrade the CLI; reassess when the upstream Capacitor patch is available.

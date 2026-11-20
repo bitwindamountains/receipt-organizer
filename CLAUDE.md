@@ -27,7 +27,14 @@ Android (no Android Studio needed). JDK 21 is at `C:\Program Files\Microsoft\jdk
 cd android && ./gradlew assembleDebug      # or assembleRelease / bundleRelease
 ```
 
-Release builds are only signed when `android/keystore.properties` exists (gitignored; keys `storeFile`, `storePassword`, `keyAlias`, `keyPassword`). Without it Gradle silently produces unsigned output. Bump `versionCode`/`versionName` in `android/app/build.gradle` for each Play upload.
+Release builds are only signed when `android/keystore.properties` exists (gitignored; keys `storeFile`, `storePassword`, `keyAlias`, `keyPassword`; the key is `android/starlog-upload.jks`, alias `upload`). Without it Gradle silently produces unsigned output. Never print or commit the password, the `.properties` file or the `.jks`.
+
+Releasing (no Play account; the signed APK is shared through GitHub Releases):
+1. Bump the version in three places: `versionCode`/`versionName` in `android/app/build.gradle`, `version` in `package.json`, `APP_VERSION` in `core/backup/backup.service.ts`.
+2. `npm run check`, then branch, PR and merge.
+3. `cd android && ./gradlew assembleRelease`; verify with `apksigner verify --print-certs` (Android build-tools 36.0.0; `jarsigner` prints nothing useful for APKs).
+4. `gh release create vX.Y.Z` with the APK renamed `Starlog-X.Y.Z.apk`.
+5. `npm run build:web` (again: `npm run check` overwrites `dist/` with the Android build), then the Netlify deploy above.
 
 ## Architecture
 
