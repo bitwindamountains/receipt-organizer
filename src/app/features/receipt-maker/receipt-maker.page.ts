@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { IonBackButton, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonSpinner, IonTitle, IonToolbar, ToastController } from '@ionic/angular';
+import { IonBackButton, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonSpinner, IonTitle, IonToolbar, AlertController, ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { add, bagHandleOutline, checkmarkCircle, closeCircle, shareSocialOutline, storefrontOutline } from 'ionicons/icons';
 import { suggestCategory } from '../../core/ocr/receipt-parser';
@@ -13,6 +13,7 @@ import { ImageStorageService } from '../../core/services/image-storage.service';
 import { ItemStore } from '../../core/services/item.store';
 import { PreferencesStore } from '../../core/services/preferences.store';
 import { ReplayAnimationDirective } from '../../shared/replay-animation.directive';
+import { DiscardGuarded } from '../../core/utils/confirm-discard';
 
 const PAYMENTS = ['Cash', 'GCash', 'Maya', 'Card', 'Bank transfer'];
 const CURRENCIES = ['PHP', 'USD', 'EUR', 'GBP', 'CNY', 'JPY', 'AUD', 'CAD'];
@@ -58,7 +59,7 @@ function todayKey(): string {
           <section class="receipt-preview-wrap" aria-label="Receipt preview">
             <div class="receipt-preview" [class.is-sold]="mode() === 'sold'" [style.--accent]="accent()">
               <h2 class="rp-title">{{ issuerTitle() }}</h2>
-              @if (mode() === 'sold' ? businessDetails().trim() : true) {
+              @if (mode() === 'sold' ? businessDetails().trim() : storeName().trim()) {
                 <p class="rp-sub">{{ mode() === 'sold' ? businessDetails() : 'Purchase record' }}</p>
               }
               <p class="rp-kind">{{ mode() === 'sold' ? 'Official receipt' : 'Receipt' }}</p>
@@ -135,15 +136,16 @@ function todayKey(): string {
             </div>
 
             <div class="form-card maker-card">
-              <p class="form-card-label">Items</p>
+              <p class="form-card-label" id="items-label">Items</p>
               @for (line of lines(); track $index; let i = $index) {
                 <div class="line-row" animate.enter="enter-expand" animate.leave="leave-fade">
-                  <label class="field line-desc"><span class="visually-hidden">Item {{ i + 1 }}</span><input [value]="line.description" (input)="updateLine(i, 'description', value($event))" placeholder="Item {{ i + 1 }}" maxlength="80" /></label>
+                  <label class="field line-desc"><span class="visually-hidden">Item {{ i + 1 }}</span><input [value]="line.description" (input)="updateLine(i, 'description', value($event))" placeholder="Item {{ i + 1 }}" maxlength="80" [attr.aria-invalid]="itemsError() ? true : null" [attr.aria-describedby]="itemsError() ? 'items-error' : null" /></label>
                   <label class="field line-qty"><span class="visually-hidden">Quantity</span><input type="number" inputmode="numeric" min="1" step="1" [value]="line.quantity" (input)="updateLine(i, 'quantity', value($event))" aria-label="Quantity" /></label>
                   <label class="field line-price"><span class="visually-hidden">Price</span><input type="number" inputmode="decimal" min="0" step="0.01" [value]="line.price || ''" (input)="updateLine(i, 'price', value($event))" placeholder="0.00" aria-label="Price" /></label>
                   <button type="button" class="line-remove" (click)="removeLine(i)" [disabled]="lines().length === 1" [attr.aria-label]="'Remove item ' + (i + 1)"><ion-icon name="close-circle" /></button>
                 </div>
               }
+              @if (itemsError()) { <p class="field-error" id="items-error" role="alert">{{ itemsError() }}</p> }
               <button type="button" class="line-add" (click)="addLine()"><ion-icon name="add" aria-hidden="true" /> Add item</button>
               <label class="field field--short discount"><span>Discount (optional)</span><input type="number" inputmode="decimal" min="0" step="0.01" [value]="discount() || ''" (input)="discount.set(+value($event) || 0)" placeholder="0.00" /></label>
             </div>
@@ -176,12 +178,14 @@ function todayKey(): string {
     </ion-content>
   `,
 })
-export class ReceiptMakerPage {
+export class ReceiptMakerPage implements DiscardGuarded {
   private readonly store = inject(ItemStore);
   private readonly images = inject(ImageStorageService);
   private readonly profiles = inject(BusinessProfileStore);
   private readonly preferences = inject(PreferencesStore);
   private readonly toasts = inject(ToastController);
+  private readonly alerts = inject(AlertController);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly router = inject(Router);
   protected readonly categories = inject(CategoryStore);
 
@@ -206,6 +210,10 @@ export class ReceiptMakerPage {
   protected readonly saving = signal(false);
   protected readonly sharing = signal(false);
   protected readonly error = signal('');
+  /** Shown under the Items card, where the problem is, not above the Save button. */
+  protected readonly itemsError = signal('');
+  /** Set once saved, so leaving for the new receipt doesn't ask to discard it. */
+  private saved = false;
 
   protected readonly previewLines = computed(() => filledLines(this.lines()));
   protected readonly totals = computed(() => receiptTotals(this.previewLines(), this.discount()));
@@ -264,7 +272,21 @@ export class ReceiptMakerPage {
     this.lines.update((lines) => (lines.length > 1 ? lines.filter((_, i) => i !== index) : lines));
   }
 
+  /** Leaving with items, a store or notes typed asks first (Cancel, back arrow, Android back). */
+  async confirmLeave(): Promise<boolean> {
+    const typed = this.lines().some((line) => line.description.trim() || line.price) || this.storeName().trim() || this.customer().trim() || this.notes().trim();
+    if (this.saved || !typed) return true;
+    const alert = await this.alerts.create({
+      header: 'Discard this receipt?',
+      message: "What you've entered won't be saved.",
+      buttons: [{ text: 'Keep editing', role: 'cancel' }, { text: 'Discard', role: 'destructive', cssClass: 'alert-danger' }],
+    });
+    await alert.present();
+    return (await alert.onDidDismiss()).role === 'destructive';
+  }
+
   updateLine(index: number, field: keyof ReceiptLine, raw: string): void {
+    if (field === 'price' && Number(raw) > 0) this.itemsError.set('');
     const value = field === 'description' ? raw : Math.max(0, Number(raw) || 0);
     this.lines.update((lines) => lines.map((line, i) => (i === index ? { ...line, [field]: value } : line)));
   }
@@ -284,9 +306,11 @@ export class ReceiptMakerPage {
     const draft = this.draft();
     const totals = this.totals();
     if (!draft.lines.length || totals.subtotal === 0) {
-      this.error.set('Add at least one item with a price.');
+      this.itemsError.set('Add at least one item with a price.');
+      this.host.querySelector<HTMLInputElement>('.line-price input')?.focus();
       return;
     }
+    this.itemsError.set('');
     if (draft.mode === 'sold' && !draft.issuer.trim()) {
       this.error.set('Add your business name so your customer knows who the receipt is from.');
       return;
@@ -326,6 +350,7 @@ export class ReceiptMakerPage {
       await toast.present();
       // Show the saved receipt first, then open the share sheet over it. The receipt is
       // already saved, so a sharing problem must not read as a failed save.
+      this.saved = true;
       await this.router.navigate(['/item', item.id], { replaceUrl: true });
       if (share) void this.shareSaved(imageKey, `Receipt ${draft.number || draft.date}.png`);
     } catch {

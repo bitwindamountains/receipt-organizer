@@ -3,7 +3,7 @@ import { Component, computed, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { receiptOutline, imageOutline, star } from 'ionicons/icons';
+import { imageOutline, star } from 'ionicons/icons';
 import { SavedItem } from '../../core/models/saved-item';
 import { injectImageUrl } from '../../core/services/image-url';
 import { displayTitle, formatAmount, itemDate } from '../../core/utils/item-display';
@@ -18,10 +18,10 @@ import { displayTitle, formatAmount, itemDate } from '../../core/utils/item-disp
         @if (imageUrl()) {
           <img [src]="imageUrl()" alt="" loading="lazy" decoding="async" (load)="markLoaded(imageUrl(), $event)" (error)="markLoaded(imageUrl())" />
         }
-        <span class="type-badge">
-          <ion-icon [name]="item().type === 'receipt' ? 'receipt-outline' : 'image-outline'" aria-hidden="true" />
-          {{ item().type === 'receipt' ? 'Receipt' : 'Screenshot' }}
-        </span>
+        <!-- Receipts are the norm; only the exception gets a label. -->
+        @if (item().type === 'screenshot') {
+          <span class="type-badge"><ion-icon name="image-outline" aria-hidden="true" /> Screenshot</span>
+        }
         @if (item().isFavorite) {
           <span class="fav-badge" animate.enter="enter-pop"><ion-icon name="star" aria-hidden="true" /><span class="visually-hidden">Favorite</span></span>
         }
@@ -29,7 +29,9 @@ import { displayTitle, formatAmount, itemDate } from '../../core/utils/item-disp
       <div class="item-copy">
         <strong>{{ displayTitle(item()) }}</strong>
         <span class="meta">{{ item().category }} · {{ date() | date: 'MMM d' }}</span>
-        @if (formatAmount(item()); as amount) { <span class="amount num">{{ amount }}</span> }
+        @if (formatAmount(item()); as amount) {
+          <span class="amount num" [class.is-income]="item().flow === 'income'">{{ item().flow === 'income' ? '+' : '' }}{{ amount }}@if (item().flow === 'income') {<span class="visually-hidden"> received</span>}</span>
+        }
       </div>
     </a>
   `,
@@ -46,7 +48,7 @@ export class ItemCardComponent {
   protected readonly formatAmount = formatAmount;
 
   constructor() {
-    addIcons({ receiptOutline, imageOutline, star });
+    addIcons({ imageOutline, star });
   }
 
   protected markLoaded(url: string, event?: Event): void {

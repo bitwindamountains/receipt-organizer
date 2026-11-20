@@ -111,7 +111,8 @@ function paint(draft: ReceiptDraft, ctx: CanvasRenderingContext2D, height?: numb
     text(line, WIDTH / 2, y, `800 22px ${SANS}`, INK, 'center');
     y += 28;
   }
-  const subtitle = draft.issuerDetails.trim() || (sold ? '' : 'Purchase record');
+  // "Purchase record" under a store name; without one the title already says "Purchase".
+  const subtitle = draft.issuerDetails.trim() || (sold || !draft.issuer.trim() ? '' : 'Purchase record');
   if (subtitle) {
     for (const line of wrap(subtitle, `500 12px ${SANS}`, WIDTH - PAD * 2)) {
       text(line, WIDTH / 2, y, `500 12px ${SANS}`, MUTED, 'center');

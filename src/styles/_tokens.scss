@@ -24,8 +24,9 @@
   --ion-background-color-rgb: 247, 246, 241;
   --ion-text-color: #15201d;
   --ion-text-color-rgb: 21, 32, 29;
-  --ion-color-medium: #63716d;
-  --ion-color-medium-rgb: 99, 113, 109;
+  // 4.8:1 or better on every light surface (#63716d was 4.3:1 on the Library/Insights panels).
+  --ion-color-medium: #5b6965;
+  --ion-color-medium-rgb: 91, 105, 101;
   --ion-toolbar-background: var(--ion-background-color);
   --ion-item-background: transparent;
 

@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, Routes } from '@angular/router';
+import { confirmDiscard } from './core/utils/confirm-discard';
 
 const requiresOnboarding: CanActivateFn = () =>
   localStorage.getItem('snapsort.onboarding.complete') === 'true'
@@ -42,11 +43,13 @@ export const routes: Routes = [
   {
     path: 'add',
     canActivate: [requiresOnboarding],
+    canDeactivate: [confirmDiscard],
     loadComponent: () => import('./features/add-item/add-item.page').then((m) => m.AddItemPage),
   },
   {
     path: 'receipt/new',
     canActivate: [requiresOnboarding],
+    canDeactivate: [confirmDiscard],
     loadComponent: () =>
       import('./features/receipt-maker/receipt-maker.page').then((m) => m.ReceiptMakerPage),
   },
@@ -64,6 +67,7 @@ export const routes: Routes = [
   {
     path: 'item/:id/edit',
     canActivate: [requiresOnboarding],
+    canDeactivate: [confirmDiscard],
     loadComponent: () => import('./features/add-item/add-item.page').then((m) => m.AddItemPage),
   },
   { path: '**', redirectTo: '' },

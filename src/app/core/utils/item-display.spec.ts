@@ -1,5 +1,5 @@
 import { SavedItem } from '../models/saved-item';
-import { displayTitle, findDuplicate, formatAmount, groupByMonth, itemDate, itemDateKey, matchesQuery, merchantSuggestions, monthlyReceiptSummary } from './item-display';
+import { displayTitle, findDuplicate, formatAmount, groupByMonth, itemDate, itemDateKey, matchesQuery, merchantSuggestions, monthlyReceiptSummary, needsDetails, receivedTotal } from './item-display';
 
 const item: SavedItem = {
   id: 'one',
@@ -22,6 +22,19 @@ const item: SavedItem = {
 };
 
 describe('item display utilities', () => {
+  it('flags receipts missing an amount or a date', () => {
+    expect(needsDetails(item)).toBe(false);
+    expect(needsDetails({ ...item, amountMinor: null })).toBe(true);
+    expect(needsDetails({ ...item, purchaseDate: null })).toBe(true);
+    expect(needsDetails({ ...item, type: 'screenshot', amountMinor: null })).toBe(false);
+  });
+
+  it('totals money received separately from spending', () => {
+    expect(receivedTotal([item])).toBeNull();
+    const sale = { ...item, id: 's', flow: 'income' as const, amountMinor: 60000 };
+    expect(receivedTotal([item, sale])).toMatch(/^\+.*600\.00$/);
+  });
+
   it('finds a receipt already saved with the same amount and date', () => {
     expect(findDuplicate([item], 4999500, '2026-09-11')?.id).toBe('one');
     expect(findDuplicate([item], 4999500, '2026-09-12')).toBeNull();

@@ -66,7 +66,8 @@ app-item-card { display: block; min-width: 0; }
   padding: 5px 9px 5px 7px;
   border-radius: 999px;
   color: #fff;
-  background: rgba(10, 16, 14, .55);
+  // .72: white text stays above 4.5:1 even over a white receipt.
+  background: rgba(10, 16, 14, .72);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   font-size: .75rem;
@@ -91,6 +92,7 @@ app-item-card { display: block; min-width: 0; }
 .item-copy strong { overflow: hidden; font-size: .95rem; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; text-overflow: ellipsis; white-space: nowrap; }
 .item-copy .meta { color: var(--ion-color-medium); font-size: .78rem; }
 .item-copy .amount { color: var(--ion-text-color); font-size: .86rem; font-weight: 760; }
+.item-copy .amount.is-income { color: var(--ion-color-primary); }
 
 @media (prefers-reduced-motion: no-preference) {
   .item-card:active .thumb { transform: scale(.97); transition-duration: 120ms; }
